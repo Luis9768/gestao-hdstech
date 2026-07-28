@@ -6,7 +6,7 @@ import History from './History'
 import Settings from './Settings'
 import UsersManager from './UsersManager'
 import HeadsetsManager from './HeadsetsManager'
-import { fetchCloudData, saveCloudData } from './supabaseClient'
+import api from './api'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, CartesianGrid, XAxis, YAxis, Bar } from 'recharts'
 import './index.css'
 
@@ -62,15 +62,18 @@ function App() {
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      // 1. Tentar buscar da nuvem (Supabase)
-      const cloudData = await fetchCloudData();
-      if (cloudData) {
-        applyDataState(cloudData);
-      } else if (window.electronAPI) {
+      try {
+        const response = await api.get('/all');
+        if (response.data) {
+          applyDataState(response.data);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar dados da API", err);
         // Fallback local se estiver rodando via Electron desktop
-        const localData = await window.electronAPI.readDB();
-        applyDataState(localData);
-      } else {
+        if (window.electronAPI) {
+          const localData = await window.electronAPI.readDB();
+          applyDataState(localData);
+        } else {
         // Default inicial para sala de TIM e Affix se estiver zerado na nuvem
         applyDataState({
           rooms: [
@@ -89,6 +92,7 @@ function App() {
             }
           ]
         });
+      }
       }
       setLoading(false);
     };
@@ -109,8 +113,12 @@ function App() {
       ...newData
     };
 
-    // Salvar na nuvem (Supabase)
-    await saveCloudData(payload);
+    // Salvar na nuvem (PostgreSQL via API)
+    try {
+      await api.post('/sync', payload);
+    } catch (err) {
+      console.error("Erro ao sincronizar com o banco de dados", err);
+    }
 
     // Salvar localmente se for Electron
     if (window.electronAPI) {

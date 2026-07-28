@@ -11,46 +11,49 @@ model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
-  role      String   @default("user") // admin ou user
+  role      String   @default("user")
+  password  String?
 }
 
 model Cpu {
-  id        String   @id // ID Patrimônio (Ex: CPU-1234)
-  name      String   // Nome Anydesk
-  location  String   // 'estoque' ou nome da sala
-  date      String
+  id          String   @id // Vamos converter o Date.now() para String na hora de salvar
+  code        String
+  acquisition String
+  isAuditen   Boolean  @default(false)
+  location    String
 }
 
 model Room {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  pas       String[] // Array de números de PA (ex: ["01", "02"])
+  id          Int      @id
+  name        String   @unique
+  capacity    Int
+  paStatus    Json
 }
 
 model HeadsetStock {
-  id        Int      @id @default(autoincrement())
-  brand     String   @unique
-  quantity  Int      @default(0)
+  id          String   @id
+  brand       String   @unique
+  quantity    Int      @default(0)
 }
 
 model HeadsetDefect {
-  id         Int      @id @default(autoincrement())
-  date       String
-  returnDate String?
-  brand      String
-  defect     String
-  status     String   // Aguardando, Enviada, Resolvido
-  box        String
+  id          String   @id
+  date        String
+  returnDate  String?
+  brand       String
+  defect      String
+  status      String
+  box         String
 }
 
 model History {
-  id        Int      @id @default(autoincrement())
-  date      String
-  action    String
-  cpu       String?
-  from      String?
-  to        String?
-  brand     String?
-  qty       Int?
-  details   String?
+  id          String   @id
+  date        String
+  action      String?
+  cpuCode     String?
+  from        String?
+  to          String?
+  brand       String?
+  qty         Int?
+  details     String?
 }
