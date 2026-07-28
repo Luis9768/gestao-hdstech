@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchCloudData, sanitizeInput } from './supabaseClient';
+import api, { sanitizeInput } from './api';
 import './Login.css';
 
 export default function Login({ onLogin }) {
@@ -12,10 +12,24 @@ export default function Login({ onLogin }) {
   useEffect(() => {
     const loadUsers = async () => {
       setLoading(true);
-      const cloudData = await fetchCloudData();
-      if (cloudData && cloudData.users && cloudData.users.length > 0) {
-        setUsers(cloudData.users);
-      } else {
+      try {
+        const response = await api.get('/all');
+        if (response.data && response.data.users && response.data.users.length > 0) {
+          setUsers(response.data.users);
+        } else {
+          // Fallback default admin if first time
+          setUsers([
+            {
+              id: 1,
+              name: 'Luis Miguel',
+              email: 'luis.miguel@headsetbrasil.com',
+              password: 'Headset@2021#$!',
+              role: 'admin'
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar usuarios", err);
         // Fallback default admin if first time
         setUsers([
           {

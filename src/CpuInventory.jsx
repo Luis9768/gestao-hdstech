@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sanitizeInput } from './supabaseClient';
+import { sanitizeInput } from './api';
 import './CpuInventory.css';
 
 export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
