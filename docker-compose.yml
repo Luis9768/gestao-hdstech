@@ -30,7 +30,7 @@ services:
 
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: gestao-gpu-frontend
     restart: always
