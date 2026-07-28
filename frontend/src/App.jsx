@@ -18,8 +18,14 @@ function App() {
     const saved = localStorage.getItem('gestao-cpus-user');
     return saved ? JSON.parse(saved) : null;
   })
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('gestao-cpus-theme') || 'dark';
+  })
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
   
   // Data state
   const [cpus, setCpus] = useState([])
@@ -126,8 +132,9 @@ function App() {
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
+    localStorage.setItem('gestao-cpus-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
     updateData({ settings: { theme: newTheme } });
   };

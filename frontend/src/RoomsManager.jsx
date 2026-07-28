@@ -271,7 +271,10 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
                   style={{ cursor: cpuInfo ? 'pointer' : 'default' }}
                 >
                   <div className="pa-header">
-                    <span className="pa-title">PA {String(globalPaNumber).padStart(2, '0')}</span>
+                    <div className="pa-title-group">
+                      <span className="pa-status-dot"></span>
+                      <span className="pa-title">PA {String(globalPaNumber).padStart(2, '0')}</span>
+                    </div>
                     {cpuInfo && (
                       <button 
                         className="pa-remove-btn"
