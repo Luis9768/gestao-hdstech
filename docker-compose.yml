@@ -7,8 +7,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      # A variável DATABASE_URL deve ser configurada no seu Easypanel ou `.env`
-      # Exemplo: DATABASE_URL=postgresql://postgres:suasenha@31.97.251.104:5432/gestao-gpu?schema=public
+      - DATABASE_URL=${DATABASE_URL}
       - PORT=3000
     expose:
       - "3000"
