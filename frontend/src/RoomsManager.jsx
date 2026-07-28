@@ -96,6 +96,17 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     setSelectedRoom(newRooms.find(r => r.id === selectedRoom.id));
   };
 
+  const buildHistoryList = (cpuCode, fromLoc, toLoc) => ([
+    {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      cpuCode,
+      from: fromLoc,
+      to: toLoc
+    },
+    ...history
+  ]);
+
   const handleCpuDrop = (cpuId, paIndex) => {
     const cpu = cpus.find(c => String(c.id) === String(cpuId));
     if (!cpu || !selectedRoom) return;
@@ -132,18 +143,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
        return r;
     });
 
-    const createHistoryEntry = (cpuCode, fromLoc, toLoc) => ([
-      {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        cpuCode,
-        from: fromLoc,
-        to: toLoc
-      },
-      ...history
-    ]);
-
-    const newHistoryList = createHistoryEntry(cpu.code, oldLocation, newLocation);
+    const newHistoryList = buildHistoryList(cpu.code, oldLocation, newLocation);
 
     setCpus(newCpus);
     setRooms(newRooms);
@@ -167,18 +167,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
         paStatus: r.paStatus.filter(p => String(p.cpuId) !== String(cpuId))
     }));
 
-    const createHistoryEntry = (cpuCode, fromLoc, toLoc) => ([
-      {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        cpuCode,
-        from: fromLoc,
-        to: toLoc
-      },
-      ...history
-    ]);
-
-    const newHistoryList = createHistoryEntry(cpu.code, oldLocation, newLocation);
+    const newHistoryList = buildHistoryList(cpu.code, oldLocation, newLocation);
 
     setCpus(newCpus);
     setRooms(newRooms);

@@ -83,13 +83,11 @@ button.primary:hover {
 
 input, select {
   font-family: 'Outfit', sans-serif;
-  -webkit-app-region: no-drag !important;
   pointer-events: auto !important;
   user-select: auto !important;
 }
 
 button {
-  -webkit-app-region: no-drag !important;
   pointer-events: auto !important;
 }
 
