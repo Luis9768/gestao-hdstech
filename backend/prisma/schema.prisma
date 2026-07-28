@@ -57,12 +57,3 @@ model History {
   qty         Int?
   details     String?
 }
-
-model HeadsetHistory {
-  id          BigInt   @id
-  date        DateTime @default(now())
-  action      String
-  brand       String
-  qty         Int
-  details     String?
-}
