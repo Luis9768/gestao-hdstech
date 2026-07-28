@@ -43,7 +43,7 @@ app.post('/api/sync', async (req, res) => {
     if (cpus && cpus.length) {
       await prisma.cpu.createMany({
         data: cpus.map(c => ({
-          id: String(c.id),
+          id: BigInt(c.id),
           code: c.code || '',
           acquisition: c.acquisition || '',
           isAuditen: Boolean(c.isAuditen),
@@ -66,7 +66,7 @@ app.post('/api/sync', async (req, res) => {
     if (headsetStock && headsetStock.length) {
       await prisma.headsetStock.createMany({
         data: headsetStock.map(s => ({
-          id: String(s.id),
+          id: BigInt(s.id),
           brand: s.brand,
           quantity: Number(s.quantity)
         }))
@@ -76,7 +76,7 @@ app.post('/api/sync', async (req, res) => {
     if (headsetDefects && headsetDefects.length) {
       await prisma.headsetDefect.createMany({
         data: headsetDefects.map(d => ({
-          id: String(d.id),
+          id: BigInt(d.id),
           date: d.date || '',
           returnDate: d.returnDate || null,
           brand: d.brand || '',
@@ -90,7 +90,7 @@ app.post('/api/sync', async (req, res) => {
     if (history && history.length) {
       await prisma.history.createMany({
         data: history.map(h => ({
-          id: String(h.id),
+          id: BigInt(h.id),
           date: h.date || '',
           action: h.action || null,
           cpuCode: h.cpuCode || null,

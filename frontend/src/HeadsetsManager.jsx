@@ -26,7 +26,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     const today = new Date();
     const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()} ${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
     const newEntry = {
-      id: Date.now() + Math.random(),
+      id: Date.now() + Math.floor(Math.random() * 1000),
       date: formattedDate,
       action,
       brand,
@@ -159,7 +159,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
       if (existing) {
         existing.quantity += 1;
       } else {
-        newStock.push({ id: Date.now() + Math.random(), brand: item.brand.trim(), quantity: 1 });
+        newStock.push({ id: Date.now() + Math.floor(Math.random() * 1000), brand: item.brand.trim(), quantity: 1 });
       }
     });
 

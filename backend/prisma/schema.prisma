@@ -16,7 +16,7 @@ model User {
 }
 
 model Cpu {
-  id          String   @id // Vamos converter o Date.now() para String na hora de salvar
+  id          BigInt   @id
   code        String
   acquisition String
   isAuditen   Boolean  @default(false)
@@ -31,13 +31,13 @@ model Room {
 }
 
 model HeadsetStock {
-  id          String   @id
+  id          BigInt   @id
   brand       String   @unique
   quantity    Int      @default(0)
 }
 
 model HeadsetDefect {
-  id          String   @id
+  id          BigInt   @id
   date        String
   returnDate  String?
   brand       String
@@ -47,7 +47,7 @@ model HeadsetDefect {
 }
 
 model History {
-  id          String   @id
+  id          BigInt   @id
   date        String
   action      String?
   cpuCode     String?
