@@ -60,6 +60,64 @@ app.post('/api/login', async (req, res) => {
 });
 
 // =======================
+// UPDATE USER Endpoint
+// =======================
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const { name, email, role, password, requesterRole, requesterEmail } = req.body;
+
+    const existing = await prisma.user.findUnique({ where: { id: userId } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Regras de Permissão:
+    // Admin pode alterar qualquer pessoa.
+    // Usuário comum só pode alterar seu próprio perfil.
+    const isAdmin = requesterRole === 'admin';
+    const isSelf = existing.email.toLowerCase() === (requesterEmail || '').toLowerCase();
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ error: 'Acesso negado: Você só pode editar seu próprio perfil.' });
+    }
+
+    // Se alterou o e-mail, verificar se já está cadastrado
+    if (email && email.toLowerCase() !== existing.email.toLowerCase()) {
+      const emailTaken = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+      if (emailTaken) {
+        return res.status(400).json({ error: 'Este e-mail já está sendo utilizado por outro usuário.' });
+      }
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email.toLowerCase();
+    
+    // Apenas Admin pode alterar o nível de acesso (role)
+    if (role && isAdmin) {
+      updateData.role = role;
+    }
+
+    // Se uma nova senha for informada, fazer hash com bcrypt
+    if (password && password.trim() !== '') {
+      updateData.password = await bcrypt.hash(password.trim(), 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData
+    });
+
+    const { password: _, ...safeUser } = updatedUser;
+    res.json({ user: safeUser, message: 'Usuário atualizado com sucesso' });
+  } catch (err) {
+    console.error("Erro ao atualizar usuário:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =======================
 // FULL STATE SYNC
 // =======================
 app.post('/api/sync', async (req, res) => {
