@@ -248,3 +248,64 @@ button {
 .badge.success {
   background-color: #22c55e;
 }
+
+/* Custom Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Enhanced Mobile Responsiveness (Small screens) */
+@media (max-width: 640px) {
+  body {
+    overflow-y: auto;
+  }
+  
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  button {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+}
+
