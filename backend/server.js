@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -11,6 +12,53 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Seed initial admin if DB is empty
+async function seedAdmin() {
+  const count = await prisma.user.count();
+  if (count === 0) {
+    const hashedPassword = await bcrypt.hash('Headset@2021#$!', 10);
+    await prisma.user.create({
+      data: {
+        name: 'Luis Miguel',
+        email: 'luis.miguel@headsetbrasil.com',
+        role: 'admin',
+        password: hashedPassword
+      }
+    });
+    console.log('Seed: Administrador inicial criado com sucesso.');
+  }
+}
+
+seedAdmin().catch(console.error);
+
+// =======================
+// LOGIN Endpoint
+// =======================
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (!user || !user.password) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    // Retorna o usuário sem a senha
+    const { password: _, ...safeUser } = user;
+    res.json({ user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // =======================
 // MASS SYNC (MIGRATION ONLY)
 // =======================
@@ -18,6 +66,13 @@ app.post('/api/sync', async (req, res) => {
   try {
     const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
     
+    // Backup passwords before clearing
+    const existingUsers = await prisma.user.findMany();
+    const passwordMap = new Map();
+    existingUsers.forEach(eu => {
+      passwordMap.set(eu.email.toLowerCase(), eu.password);
+    });
+
     // Clear existing (Order matters for foreign keys if any, but we have none)
     await prisma.$transaction([
       prisma.cpu.deleteMany(),
@@ -28,16 +83,25 @@ app.post('/api/sync', async (req, res) => {
       prisma.headsetDefect.deleteMany(),
     ]);
 
-    // Insert new
+    // Insert new users
     if (users && users.length) {
-      await prisma.user.createMany({
-        data: users.map(u => ({
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          password: u.password
-        }))
-      });
+      for (const u of users) {
+        let finalPassword = passwordMap.get(u.email.toLowerCase());
+        
+        // Se foi enviada uma nova senha (e não está em branco), vamos fazer hash
+        if (u.password && u.password.trim() !== '') {
+          finalPassword = await bcrypt.hash(u.password, 10);
+        }
+
+        await prisma.user.create({
+          data: {
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            password: finalPassword
+          }
+        });
+      }
     }
 
     if (cpus && cpus.length) {
@@ -77,8 +141,8 @@ app.post('/api/sync', async (req, res) => {
       await prisma.headsetDefect.createMany({
         data: headsetDefects.map(d => ({
           id: BigInt(d.id),
-          date: d.date || '',
-          returnDate: d.returnDate || null,
+          date: d.date ? new Date(d.date) : new Date(),
+          returnDate: d.returnDate ? new Date(d.returnDate) : null,
           brand: d.brand || '',
           defect: d.defect || '',
           status: d.status || '',
@@ -91,7 +155,7 @@ app.post('/api/sync', async (req, res) => {
       await prisma.history.createMany({
         data: history.map(h => ({
           id: BigInt(h.id),
-          date: h.date || '',
+          date: h.date ? new Date(h.date) : new Date(),
           action: h.action || null,
           cpuCode: h.cpuCode || null,
           from: h.from || null,
@@ -122,17 +186,22 @@ app.get('/api/all', async (req, res) => {
     const headsetStock = await prisma.headsetStock.findMany();
     const headsetDefects = await prisma.headsetDefect.findMany();
     
-    // Parse JSON correctly
+    // Parse JSON correctly e não enviar senhas!
     const parsedCpus = cpus.map(c => ({...c, id: Number(c.id) || c.id}));
     const parsedStock = headsetStock.map(s => ({...s, id: Number(s.id) || s.id}));
     const parsedDefects = headsetDefects.map(d => ({...d, id: Number(d.id) || d.id}));
     const parsedHistory = history.map(h => ({...h, id: Number(h.id) || h.id}));
+    
+    const safeUsers = users.map(u => {
+      const { password, ...safe } = u;
+      return safe;
+    });
 
     res.json({
       cpus: parsedCpus,
       rooms: rooms,
       history: parsedHistory,
-      users: users,
+      users: safeUsers,
       headsetStock: parsedStock,
       headsetDefects: parsedDefects,
       headsetHistory: []

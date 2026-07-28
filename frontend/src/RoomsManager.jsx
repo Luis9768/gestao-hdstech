@@ -129,7 +129,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     // Create History entry
     const newHistoryEntry = {
       id: Date.now(),
-      date: new Date().toLocaleString(),
+      date: new Date().toISOString(),
       cpuCode: cpu.code,
       from: oldLocation,
       to: newLocation
@@ -160,7 +160,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
     const newHistoryEntry = {
       id: Date.now(),
-      date: new Date().toLocaleString(),
+      date: new Date().toISOString(),
       cpuCode: cpu.code,
       from: oldLocation,
       to: newLocation

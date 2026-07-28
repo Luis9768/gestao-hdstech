@@ -7,46 +7,13 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
 
+  // Removido o carregamento de usuários aqui por segurança!
   useEffect(() => {
-    const loadUsers = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/all');
-        if (response.data && response.data.users && response.data.users.length > 0) {
-          setUsers(response.data.users);
-        } else {
-          // Fallback default admin if first time
-          setUsers([
-            {
-              id: 1,
-              name: 'Luis Miguel',
-              email: 'luis.miguel@headsetbrasil.com',
-              password: 'Headset@2021#$!',
-              role: 'admin'
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error("Erro ao carregar usuarios", err);
-        // Fallback default admin if first time
-        setUsers([
-          {
-            id: 1,
-            name: 'Luis Miguel',
-            email: 'luis.miguel@headsetbrasil.com',
-            password: 'Headset@2021#$!',
-            role: 'admin'
-          }
-        ]);
-      }
-      setLoading(false);
-    };
-    loadUsers();
+    // Agora fazemos login via API, não precisamos puxar todos os usuários.
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -58,16 +25,27 @@ export default function Login({ onLogin }) {
       return;
     }
 
-    const foundUser = users.find(
-      u => u.email.toLowerCase() === cleanEmail.toLowerCase() && u.password === cleanPassword
-    );
-
-    if (!foundUser) {
-      setError('E-mail ou senha incorretos.');
-      return;
+    setLoading(true);
+    try {
+      // Chama a nova rota de login segura
+      const response = await api.post('/login', {
+        email: cleanEmail,
+        password: cleanPassword
+      });
+      
+      if (response.data && response.data.user) {
+        onLogin(response.data.user);
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.status === 401) {
+        setError('E-mail ou senha incorretos.');
+      } else {
+        setError('Erro de conexão com o servidor.');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    onLogin(foundUser);
   };
 
   return (

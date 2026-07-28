@@ -38,8 +38,8 @@ model HeadsetStock {
 
 model HeadsetDefect {
   id          BigInt   @id
-  date        String
-  returnDate  String?
+  date        DateTime @default(now())
+  returnDate  DateTime?
   brand       String
   defect      String
   status      String
@@ -48,7 +48,7 @@ model HeadsetDefect {
 
 model History {
   id          BigInt   @id
-  date        String
+  date        DateTime @default(now())
   action      String?
   cpuCode     String?
   from        String?

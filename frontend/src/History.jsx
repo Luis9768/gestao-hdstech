@@ -18,7 +18,7 @@ export default function History({ history, setHistory, updateData }) {
         
         const newEntries = data.map((row, index) => ({
           id: Date.now() + index,
-          date: row.data || row.Date || row.Data || row['Data/Hora'] || new Date().toLocaleString(),
+          date: row.data || row.Date || row.Data || row['Data/Hora'] || new Date().toISOString(),
           cpuCode: row.cpuCode || row.cpu || row.CPU || 'Desconhecido',
           from: row.from || row.Origem || row.origem || 'N/A',
           to: row.to || row.Destino || row.destino || 'N/A'
@@ -92,7 +92,7 @@ export default function History({ history, setHistory, updateData }) {
             {history.length > 0 ? (
               history.map(entry => (
                 <tr key={entry.id}>
-                  <td>{entry.date}</td>
+                  <td style={{whiteSpace: 'nowrap'}}>{new Date(entry.date).toLocaleString('pt-BR')}</td>
                   <td><strong>{entry.cpuCode}</strong></td>
                   <td><span className="badge badge-outline">{entry.from}</span></td>
                   <td><span className="badge badge-outline">{entry.to}</span></td>

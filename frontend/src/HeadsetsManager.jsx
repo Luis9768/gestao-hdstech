@@ -24,7 +24,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
   const logEvent = (action, brand, qty, details) => {
     const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()} ${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+    const formattedDate = new Date().toISOString();
     const newEntry = {
       id: Date.now() + Math.floor(Math.random() * 1000),
       date: formattedDate,
@@ -89,7 +89,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     
     // Format BR Date
     const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    const formattedDate = new Date().toISOString();
 
     const newDefect = {
       id: Date.now(),
@@ -142,7 +142,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
     // Format BR Date
     const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    const formattedDate = new Date().toISOString();
 
     // Update defects status
     const newDefects = defects.map(d => {
@@ -415,8 +415,8 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                     <tr><td colSpan="5" className="text-center text-muted py-4">Nenhum registro encontrado</td></tr>
                   ) : filteredDefects.map(d => (
                     <tr key={d.id}>
-                      <td style={{whiteSpace: 'nowrap'}}>{d.date}</td>
-                      <td style={{whiteSpace: 'nowrap'}} className="text-muted">{d.returnDate || '-'}</td>
+                      <td style={{whiteSpace: 'nowrap'}}>{new Date(d.date).toLocaleString('pt-BR')}</td>
+                      <td style={{whiteSpace: 'nowrap'}} className="text-muted">{d.returnDate ? new Date(d.returnDate).toLocaleDateString('pt-BR') : '-'}</td>
                       <td style={{textTransform: 'capitalize'}}>{d.brand}</td>
                       <td>{d.defect}</td>
                       <td>
@@ -458,7 +458,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                   <tr><td colSpan="5" className="text-center text-muted py-4">Nenhum histórico registrado ainda.</td></tr>
                 ) : history.map(h => (
                   <tr key={h.id}>
-                    <td style={{whiteSpace: 'nowrap'}}>{h.date}</td>
+                    <td style={{whiteSpace: 'nowrap'}}>{new Date(h.date).toLocaleString('pt-BR')}</td>
                     <td><span className="badge badge-outline">{h.action}</span></td>
                     <td style={{textTransform: 'capitalize'}}><strong>{h.brand}</strong></td>
                     <td><span className="badge" style={{background: 'var(--text-muted)'}}>{h.qty}</span></td>
