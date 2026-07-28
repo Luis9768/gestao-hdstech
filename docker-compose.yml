@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: gestao-gpu-db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password_segura_aqui
-      POSTGRES_DB: gestao-gpu
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   backend:
     build: 
       context: ./backend
@@ -21,12 +8,11 @@ services:
     container_name: gestao-gpu-backend
     restart: always
     environment:
-      - DATABASE_URL=postgresql://postgres:password_segura_aqui@db:5432/gestao-gpu?schema=public
+      # A variável DATABASE_URL deve ser configurada no seu Easypanel ou `.env`
+      # Exemplo: DATABASE_URL=postgresql://postgres:suasenha@31.97.251.104:5432/gestao-gpu?schema=public
       - PORT=3000
     ports:
       - "3000:3000"
-    depends_on:
-      - db
 
   frontend:
     build:
@@ -38,6 +24,3 @@ services:
       - "80:80"
     depends_on:
       - backend
-
-volumes:
-  postgres_data:
