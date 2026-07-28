@@ -6,17 +6,8 @@ import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
-const DB_URL = process.env.DATABASE_URL || "postgresql://postgres:c6zawn8g30swqutta3za@31.97.251.104:5432/gestao-gpu?schema=public";
-process.env.DATABASE_URL = DB_URL;
-
 const app = express();
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: DB_URL
-    }
-  }
-});
+const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -34,7 +25,8 @@ function sanitizeUser(user) {
 async function seedInitialData() {
   const userCount = await prisma.user.count();
   if (userCount === 0) {
-    const hashedPassword = await bcrypt.hash('Headset@2021#$!', 10);
+    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'Headset@2021#$!';
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await prisma.user.create({
       data: {
         name: 'Luis Miguel',

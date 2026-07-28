@@ -4,7 +4,7 @@ import './CpuInventory.css';
 
 export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
   const [newCode, setNewCode] = useState('');
-  const [newAcq, setNewAcq] = useState('TIM');
+  const [newAcquisition, setNewAcquisition] = useState('TIM');
   const [isAuditen, setIsAuditen] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +23,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
   // Estados de Edição
   const [editingCpu, setEditingCpu] = useState(null);
   const [editCode, setEditCode] = useState('');
-  const [editAcq, setEditAcq] = useState('TIM');
+  const [editAcquisition, setEditAcquisition] = useState('TIM');
   const [editAuditen, setEditAuditen] = useState(false);
 
   const handleAdd = (e) => {
@@ -41,7 +41,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
     const newCpu = { 
       id: Date.now(), 
       code: finalCode, 
-      acquisition: newAcq, 
+      acquisition: newAcquisition, 
       isAuditen,
       location: 'estoque' 
     };
@@ -70,7 +70,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
   const startEdit = (cpu) => {
     setEditingCpu(cpu.id);
     setEditCode(cpu.code);
-    setEditAcq(cpu.acquisition);
+    setEditAcquisition(cpu.acquisition);
     setEditAuditen(cpu.isAuditen || false);
   };
 
@@ -88,7 +88,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
 
     const updatedCpus = cpus.map(c => {
       if (c.id === editingCpu) {
-        return { ...c, code: finalCode, acquisition: editAcq, isAuditen: editAuditen };
+        return { ...c, code: finalCode, acquisition: editAcquisition, isAuditen: editAuditen };
       }
       return c;
     });
@@ -115,7 +115,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
             className="premium-input"
             style={{flex: 1, minWidth: '200px'}}
           />
-          <select value={newAcq} onChange={(e) => setNewAcq(e.target.value)} className="premium-input" style={{width: '150px'}}>
+          <select value={newAcquisition} onChange={(e) => setNewAcquisition(e.target.value)} className="premium-input" style={{width: '150px'}}>
             {acqOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
@@ -181,7 +181,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
               </div>
               <div className="input-group">
                 <label>Aquisição</label>
-                <select className="premium-input" value={editAcq} onChange={e => setEditAcq(e.target.value)}>
+                <select className="premium-input" value={editAcquisition} onChange={e => setEditAcquisition(e.target.value)}>
                   {acqOptions.map(opt => (
                     <option key={opt} value={opt}>{opt}</option>
                   ))}

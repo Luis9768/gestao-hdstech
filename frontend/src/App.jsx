@@ -75,11 +75,6 @@ function App() {
         }
       } catch (err) {
         console.error("Erro ao buscar dados da API", err);
-        // Fallback local se estiver rodando via Electron desktop
-        if (window.electronAPI) {
-          const localData = await window.electronAPI.readDB();
-          applyDataState(localData);
-        } else {
         // Default inicial para sala de TIM e Affix se estiver zerado na nuvem
         applyDataState({
           rooms: [
@@ -97,7 +92,6 @@ function App() {
             }
           ]
         });
-      }
       }
       setLoading(false);
     };
@@ -123,11 +117,6 @@ function App() {
       await api.post('/sync', payload);
     } catch (err) {
       console.error("Erro ao sincronizar com o banco de dados", err);
-    }
-
-    // Salvar localmente se for Electron
-    if (window.electronAPI) {
-      window.electronAPI.writeDB(payload);
     }
   };
 
