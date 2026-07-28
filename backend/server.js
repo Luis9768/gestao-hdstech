@@ -12,10 +12,10 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Seed initial admin if DB is empty
-async function seedAdmin() {
-  const count = await prisma.user.count();
-  if (count === 0) {
+// Seed initial admin & rooms if DB is empty
+async function seedInitialData() {
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
     const hashedPassword = await bcrypt.hash('Headset@2021#$!', 10);
     await prisma.user.create({
       data: {
@@ -27,9 +27,20 @@ async function seedAdmin() {
     });
     console.log('Seed: Administrador inicial criado com sucesso.');
   }
+
+  const roomCount = await prisma.room.count();
+  if (roomCount === 0) {
+    await prisma.room.createMany({
+      data: [
+        { id: 1, name: 'TIM', capacity: 24, paStatus: [] },
+        { id: 2, name: 'Affix', capacity: 28, paStatus: [] }
+      ]
+    });
+    console.log('Seed: Salas iniciais criadas com sucesso.');
+  }
 }
 
-seedAdmin().catch(console.error);
+seedInitialData().catch(console.error);
 
 // =======================
 // LOGIN Endpoint

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './RoomsManager.css';
 
 export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, setHistory, updateData }) {
@@ -8,6 +8,12 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
   const [newRoomCapacity, setNewRoomCapacity] = useState(24);
 
   const [viewingCpuModal, setViewingCpuModal] = useState(null);
+
+  useEffect(() => {
+    if (!selectedRoom && rooms && rooms.length > 0) {
+      setSelectedRoom(rooms[0]);
+    }
+  }, [rooms, selectedRoom]);
 
   const getStartingPaNumber = (roomId) => {
     let count = 1;
