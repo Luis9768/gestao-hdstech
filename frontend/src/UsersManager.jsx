@@ -38,6 +38,7 @@ export default function UsersManager({ usersList, setUsersList, updateData, curr
       // MODO EDIÇÃO (PUT /api/users/:id)
       try {
         const response = await api.put(`/users/${editingUser.id}`, {
+          originalEmail: editingUser.email,
           name: name.trim(),
           email: email.trim(),
           role: isAdmin ? role : editingUser.role,

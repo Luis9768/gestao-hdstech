@@ -65,9 +65,22 @@ app.post('/api/login', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const { name, email, role, password, requesterRole, requesterEmail } = req.body;
+    const { name, email, originalEmail, role, password, requesterRole, requesterEmail } = req.body;
 
-    const existing = await prisma.user.findUnique({ where: { id: userId } });
+    let existing = null;
+    // Tenta por ID numérico se for um ID valido do Postgres (< 2 bilhoes)
+    if (!isNaN(userId) && userId < 2000000000) {
+      existing = await prisma.user.findUnique({ where: { id: userId } });
+    }
+
+    // Fallback: Busca pelo e-mail original se o ID for um Date.now() do frontend
+    if (!existing) {
+      const searchEmail = originalEmail || email;
+      if (searchEmail) {
+        existing = await prisma.user.findUnique({ where: { email: searchEmail.toLowerCase() } });
+      }
+    }
+
     if (!existing) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
