@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { exportToExcel } from './utils/excelExporter';
 import './History.css';
 
 export default function HeadsetsManager({ stock, setStock, defects, setDefects, history = [], setHistory, updateData }) {
@@ -171,22 +171,16 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
   };
 
   const handleExportCSV = () => {
-    if (filteredDefects.length === 0) return alert('Não há dados visíveis para exportar com os filtros atuais.');
-    
     const dataToExport = filteredDefects.map(d => ({
-      'DATA REGISTRO': d.date,
-      'DATA RETORNO': d.returnDate || '-',
+      'DATA REGISTRO': d.date ? new Date(d.date).toLocaleString('pt-BR') : '-',
+      'DATA RETORNO': d.returnDate ? new Date(d.returnDate).toLocaleDateString('pt-BR') : '-',
       'MODELO': d.brand,
       'DEFEITO': d.defect,
       'STATUS': d.status,
       'CAIXA': d.box
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Headsets Danificados");
-
-    XLSX.writeFile(workbook, "headsets_danificados.xlsx");
+    exportToExcel(dataToExport, "headsets_danificados.xlsx", "Headsets Danificados");
   };
 
   const filteredDefects = useMemo(() => {

@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { exportToExcel } from './utils/excelExporter';
 import './History.css';
 
 export default function History({ history, setHistory, updateData }) {
@@ -39,20 +40,14 @@ export default function History({ history, setHistory, updateData }) {
   };
 
   const handleExport = () => {
-    if (history.length === 0) return alert('Não há histórico para exportar.');
-    
     const dataToExport = history.map(entry => ({
-      'Data/Hora': entry.date,
+      'Data/Hora': new Date(entry.date).toLocaleString('pt-BR'),
       'CPU': entry.cpuCode,
       'Origem': entry.from,
       'Destino': entry.to
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Histórico");
-
-    XLSX.writeFile(workbook, "Historico_Movimentacoes_CPUs.xlsx");
+    exportToExcel(dataToExport, "Historico_Movimentacoes_CPUs.xlsx", "Histórico");
   };
 
   return (

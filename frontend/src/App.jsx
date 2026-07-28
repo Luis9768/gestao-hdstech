@@ -87,7 +87,6 @@ function App() {
               id: 1,
               name: 'Luis Miguel',
               email: 'luis.miguel@headsetbrasil.com',
-              password: 'Headset@2021#$!',
               role: 'admin'
             }
           ]

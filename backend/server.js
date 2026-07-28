@@ -60,7 +60,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // =======================
-// MASS SYNC (MIGRATION ONLY)
+// FULL STATE SYNC
 // =======================
 app.post('/api/sync', async (req, res) => {
   try {
