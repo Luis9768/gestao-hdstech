@@ -2,6 +2,17 @@ import { useState, useMemo } from 'react';
 import { exportToExcel } from './utils/excelExporter';
 import './History.css';
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleString('pt-BR');
+  } catch (e) {
+    return String(dateVal);
+  }
+};
+
 export default function HeadsetsManager({ stock, setStock, defects, setDefects, history = [], setHistory, updateData }) {
   const [activeSubTab, setActiveSubTab] = useState('stock'); // 'stock', 'defects', 'history'
 
@@ -452,7 +463,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                   <tr><td colSpan="5" className="text-center text-muted py-4">Nenhum histórico registrado ainda.</td></tr>
                 ) : history.map(h => (
                   <tr key={h.id}>
-                    <td style={{whiteSpace: 'nowrap'}}>{new Date(h.date).toLocaleString('pt-BR')}</td>
+                    <td style={{whiteSpace: 'nowrap'}}>{formatDate(h.date)}</td>
                     <td><span className="badge badge-outline">{h.action}</span></td>
                     <td style={{textTransform: 'capitalize'}}><strong>{h.brand}</strong></td>
                     <td><span className="badge" style={{background: 'var(--text-muted)'}}>{h.qty}</span></td>

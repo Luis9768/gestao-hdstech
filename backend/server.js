@@ -235,7 +235,7 @@ app.post('/api/sync', async (req, res) => {
         });
       }
 
-      // 6. Sincronizar Histórico
+      // 6. Sincronizar Histórico CPUs
       if (history && Array.isArray(history) && history.length > 0) {
         await tx.history.deleteMany();
         await tx.history.createMany({
@@ -249,6 +249,21 @@ app.post('/api/sync', async (req, res) => {
             brand: h.brand || null,
             qty: h.qty ? Number(h.qty) : null,
             details: h.details || null
+          }))
+        });
+      }
+
+      // 7. Sincronizar Histórico Headsets
+      if (headsetHistory && Array.isArray(headsetHistory) && headsetHistory.length > 0) {
+        await tx.headsetHistory.deleteMany();
+        await tx.headsetHistory.createMany({
+          data: headsetHistory.map(hh => ({
+            id: BigInt(hh.id),
+            date: hh.date ? new Date(hh.date) : new Date(),
+            action: hh.action || '',
+            brand: hh.brand || '',
+            qty: Number(hh.qty) || 0,
+            details: hh.details || null
           }))
         });
       }
@@ -272,12 +287,14 @@ app.get('/api/all', async (req, res) => {
     const users = await prisma.user.findMany();
     const headsetStock = await prisma.headsetStock.findMany();
     const headsetDefects = await prisma.headsetDefect.findMany();
+    const headsetHistory = await prisma.headsetHistory.findMany({ orderBy: { id: 'desc' } });
     
     // Parse JSON e sanitizar usuários
     const parsedCpus = cpus.map(c => ({...c, id: Number(c.id) || c.id}));
     const parsedStock = headsetStock.map(s => ({...s, id: Number(s.id) || s.id}));
     const parsedDefects = headsetDefects.map(d => ({...d, id: Number(d.id) || d.id}));
     const parsedHistory = history.map(h => ({...h, id: Number(h.id) || h.id}));
+    const parsedHeadsetHistory = headsetHistory.map(hh => ({...hh, id: Number(hh.id) || hh.id}));
     
     const safeUsers = users.map(u => sanitizeUser(u));
 
@@ -288,7 +305,7 @@ app.get('/api/all', async (req, res) => {
       users: safeUsers,
       headsetStock: parsedStock,
       headsetDefects: parsedDefects,
-      headsetHistory: []
+      headsetHistory: parsedHeadsetHistory
     });
   } catch(err) {
     res.status(500).json({ error: err.message });
