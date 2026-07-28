@@ -23,6 +23,22 @@ function sanitizeUser(user) {
 
 // Seed initial admin & rooms if DB is empty
 async function seedInitialData() {
+  // Garantir que a tabela HeadsetHistory exista no PostgreSQL
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "HeadsetHistory" (
+        "id" BIGINT PRIMARY KEY,
+        "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "action" TEXT NOT NULL,
+        "brand" TEXT NOT NULL,
+        "qty" INTEGER NOT NULL,
+        "details" TEXT
+      );
+    `);
+  } catch (e) {
+    console.error("Erro ao verificar/criar tabela HeadsetHistory:", e);
+  }
+
   const userCount = await prisma.user.count();
   if (userCount === 0) {
     const hashedPassword = await bcrypt.hash('Headset@2021#$!', 10);
@@ -153,7 +169,7 @@ app.put('/api/users/:id', async (req, res) => {
 // =======================
 app.post('/api/sync', async (req, res) => {
   try {
-    const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
+    const { cpus, rooms, history, users, headsetStock, headsetDefects, headsetHistory } = req.body;
     
     // Executa toda a sincronização dentro de uma única transação atômica
     await prisma.$transaction(async (tx) => {
