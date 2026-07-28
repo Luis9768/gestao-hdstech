@@ -290,6 +290,9 @@ app.get('/api/all', async (req, res) => {
     
     const safeUsers = users.map(u => sanitizeUser(u));
 
+    // Filtrar histórico de headsets a partir da tabela principal History
+    const parsedHeadsetHistory = parsedHistory.filter(h => h.action || h.brand || h.qty);
+
     res.json({
       cpus: parsedCpus,
       rooms: rooms,
@@ -297,7 +300,7 @@ app.get('/api/all', async (req, res) => {
       users: safeUsers,
       headsetStock: parsedStock,
       headsetDefects: parsedDefects,
-      headsetHistory: []
+      headsetHistory: parsedHeadsetHistory
     });
   } catch(err) {
     res.status(500).json({ error: err.message });

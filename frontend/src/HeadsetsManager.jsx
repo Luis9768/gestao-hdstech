@@ -54,7 +54,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
     setStock(newStock);
     const newHist = logEvent('Entrada Manual', newBrand.trim(), qty, 'Adicionado ao estoque');
-    updateData({ headsetStock: newStock, headsetHistory: newHist });
+    updateData({ headsetStock: newStock, headsetHistory: newHist, history: newHist });
     setNewBrand('');
     setNewQuantity('');
   };
@@ -69,7 +69,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     });
     setStock(newStock);
     const newHist = logEvent(delta > 0 ? 'Ajuste Manual (+)' : 'Ajuste Manual (-)', stock.find(s => s.id === id).brand, Math.abs(delta), 'Ajuste via botões rápidos');
-    updateData({ headsetStock: newStock, headsetHistory: newHist });
+    updateData({ headsetStock: newStock, headsetHistory: newHist, history: newHist });
   };
 
   const handleAddDefect = (e) => {
@@ -111,7 +111,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
     setDefects(newDefectsList);
     const newHist = logEvent('Defeito Registrado', defectBrand, 1, fromOperation ? 'Veio da operação (Sem baixa no estoque)' : 'Baixa no estoque funcional');
-    updateData({ headsetStock: newStock, headsetDefects: newDefectsList, headsetHistory: newHist });
+    updateData({ headsetStock: newStock, headsetDefects: newDefectsList, headsetHistory: newHist, history: newHist });
     
     setDefectDesc('');
     // Keep brand and box to facilitate multiple entries
@@ -166,7 +166,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     setStock(newStock);
     setDefects(newDefects);
     const newHist = logEvent('Retorno de Conserto', 'Múltiplos', headsetsToReturn.length, `Caixa ${boxName} recebida`);
-    updateData({ headsetStock: newStock, headsetDefects: newDefects, headsetHistory: newHist });
+    updateData({ headsetStock: newStock, headsetDefects: newDefects, headsetHistory: newHist, history: newHist });
     alert(`${headsetsToReturn.length} headsets devolvidos ao estoque!`);
   };
 
