@@ -2,6 +2,17 @@ import * as XLSX from 'xlsx';
 import { exportToExcel } from './utils/excelExporter';
 import './History.css';
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleString('pt-BR');
+  } catch (e) {
+    return String(dateVal);
+  }
+};
+
 export default function History({ history, setHistory, updateData }) {
 
   const handleFileUpload = (e) => {
@@ -87,7 +98,7 @@ export default function History({ history, setHistory, updateData }) {
             {history.length > 0 ? (
               history.map(entry => (
                 <tr key={entry.id}>
-                  <td style={{whiteSpace: 'nowrap'}}>{new Date(entry.date).toLocaleString('pt-BR')}</td>
+                  <td style={{whiteSpace: 'nowrap'}}>{formatDate(entry.date)}</td>
                   <td><strong>{entry.cpuCode}</strong></td>
                   <td><span className="badge badge-outline">{entry.from}</span></td>
                   <td><span className="badge badge-outline">{entry.to}</span></td>

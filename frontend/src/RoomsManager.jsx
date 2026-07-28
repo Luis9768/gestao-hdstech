@@ -97,7 +97,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
   };
 
   const handleCpuDrop = (cpuId, paIndex) => {
-    const cpu = cpus.find(c => c.id === cpuId);
+    const cpu = cpus.find(c => String(c.id) === String(cpuId));
     if (!cpu || !selectedRoom) return;
 
     // Check if PA is already occupied
@@ -111,7 +111,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     const newLocation = `${selectedRoom.name} - PA ${String(globalPaNumber).padStart(2, '0')}`;
 
     // Update CPU location
-    const newCpus = cpus.map(c => c.id === cpuId ? { ...c, location: newLocation } : c);
+    const newCpus = cpus.map(c => String(c.id) === String(cpuId) ? { ...c, location: newLocation } : c);
     
     // Update Rooms
     let newRooms = [...rooms];
@@ -120,7 +120,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     if (oldLocation !== 'estoque') {
        newRooms = newRooms.map(r => ({
            ...r,
-           paStatus: r.paStatus.filter(p => p.cpuId !== cpuId)
+           paStatus: r.paStatus.filter(p => String(p.cpuId) !== String(cpuId))
        }));
     }
 
@@ -154,17 +154,17 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
   };
 
   const handleRemoveCpuFromPa = (cpuId) => {
-    const cpu = cpus.find(c => c.id === cpuId);
+    const cpu = cpus.find(c => String(c.id) === String(cpuId));
     if (!cpu || !selectedRoom) return;
 
     const oldLocation = cpu.location;
     const newLocation = 'estoque';
 
-    const newCpus = cpus.map(c => c.id === cpuId ? { ...c, location: newLocation } : c);
+    const newCpus = cpus.map(c => String(c.id) === String(cpuId) ? { ...c, location: newLocation } : c);
     
     const newRooms = rooms.map(r => ({
         ...r,
-        paStatus: r.paStatus.filter(p => p.cpuId !== cpuId)
+        paStatus: r.paStatus.filter(p => String(p.cpuId) !== String(cpuId))
     }));
 
     const createHistoryEntry = (cpuCode, fromLoc, toLoc) => ([
@@ -260,9 +260,12 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
           <div className="pa-grid">
             {Array.from({ length: selectedRoom.capacity }).map((_, i) => {
-              const occupancy = selectedRoom.paStatus.find(p => p.index === i);
-              const cpuInfo = occupancy ? cpus.find(c => c.id === occupancy.cpuId) : null;
               const globalPaNumber = getStartingPaNumber(selectedRoom.id) + i;
+              const currentPaName = `${selectedRoom.name} - PA ${String(globalPaNumber).padStart(2, '0')}`;
+              const occupancy = selectedRoom.paStatus.find(p => p.index === i);
+              
+              // Busca por ID na paStatus (usando String) OU por correspondência na localização da CPU!
+              const cpuInfo = (occupancy ? cpus.find(c => String(c.id) === String(occupancy.cpuId)) : null) || cpus.find(c => c.location === currentPaName);
               
               return (
                 <div 

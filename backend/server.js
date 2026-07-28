@@ -148,33 +148,18 @@ app.post('/api/sync', async (req, res) => {
   try {
     const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
     
-    // Backup passwords before clearing
-    const existingUsers = await prisma.user.findMany();
-    const passwordMap = new Map();
-    existingUsers.forEach(eu => {
-      passwordMap.set(eu.email.toLowerCase(), eu.password);
-    });
+    // 1. Sincronizar Usuários (apenas se enviado)
+    if (users && Array.isArray(users) && users.length > 0) {
+      const existingUsers = await prisma.user.findMany();
+      const passwordMap = new Map();
+      existingUsers.forEach(eu => passwordMap.set(eu.email.toLowerCase(), eu.password));
 
-    // Clear existing (Order matters for foreign keys if any, but we have none)
-    await prisma.$transaction([
-      prisma.cpu.deleteMany(),
-      prisma.room.deleteMany(),
-      prisma.history.deleteMany(),
-      prisma.user.deleteMany(),
-      prisma.headsetStock.deleteMany(),
-      prisma.headsetDefect.deleteMany(),
-    ]);
-
-    // Insert new users
-    if (users && users.length) {
+      await prisma.user.deleteMany();
       for (const u of users) {
         let finalPassword = passwordMap.get(u.email.toLowerCase());
-        
-        // Se foi enviada uma nova senha (e não está em branco), vamos fazer hash
         if (u.password && u.password.trim() !== '') {
           finalPassword = await bcrypt.hash(u.password, 10);
         }
-
         await prisma.user.create({
           data: {
             name: u.name,
@@ -186,7 +171,9 @@ app.post('/api/sync', async (req, res) => {
       }
     }
 
-    if (cpus && cpus.length) {
+    // 2. Sincronizar CPUs (apenas se enviado)
+    if (cpus && Array.isArray(cpus) && cpus.length > 0) {
+      await prisma.cpu.deleteMany();
       await prisma.cpu.createMany({
         data: cpus.map(c => ({
           id: BigInt(c.id),
@@ -198,7 +185,9 @@ app.post('/api/sync', async (req, res) => {
       });
     }
 
-    if (rooms && rooms.length) {
+    // 3. Sincronizar Salas (apenas se enviado)
+    if (rooms && Array.isArray(rooms) && rooms.length > 0) {
+      await prisma.room.deleteMany();
       await prisma.room.createMany({
         data: rooms.map(r => ({
           id: Number(r.id),
@@ -209,7 +198,9 @@ app.post('/api/sync', async (req, res) => {
       });
     }
 
-    if (headsetStock && headsetStock.length) {
+    // 4. Sincronizar Estoque Headsets
+    if (headsetStock && Array.isArray(headsetStock) && headsetStock.length > 0) {
+      await prisma.headsetStock.deleteMany();
       await prisma.headsetStock.createMany({
         data: headsetStock.map(s => ({
           id: BigInt(s.id),
@@ -219,7 +210,9 @@ app.post('/api/sync', async (req, res) => {
       });
     }
 
-    if (headsetDefects && headsetDefects.length) {
+    // 5. Sincronizar Headsets Danificados
+    if (headsetDefects && Array.isArray(headsetDefects) && headsetDefects.length > 0) {
+      await prisma.headsetDefect.deleteMany();
       await prisma.headsetDefect.createMany({
         data: headsetDefects.map(d => ({
           id: BigInt(d.id),
@@ -233,7 +226,9 @@ app.post('/api/sync', async (req, res) => {
       });
     }
 
-    if (history && history.length) {
+    // 6. Sincronizar Histórico (apenas se enviado e tiver dados)
+    if (history && Array.isArray(history) && history.length > 0) {
+      await prisma.history.deleteMany();
       await prisma.history.createMany({
         data: history.map(h => ({
           id: BigInt(h.id),
