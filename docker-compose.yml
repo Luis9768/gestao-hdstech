@@ -11,8 +11,8 @@ services:
       # A variável DATABASE_URL deve ser configurada no seu Easypanel ou `.env`
       # Exemplo: DATABASE_URL=postgresql://postgres:suasenha@31.97.251.104:5432/gestao-gpu?schema=public
       - PORT=3000
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
 
   frontend:
     build:
@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
     container_name: gestao-gpu-frontend
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - backend
