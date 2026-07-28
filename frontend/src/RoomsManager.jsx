@@ -255,11 +255,12 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
               
               // Busca por ID na paStatus (usando String) OU por correspondência na localização da CPU!
               const cpuInfo = (occupancy ? cpus.find(c => String(c.id) === String(occupancy.cpuId)) : null) || cpus.find(c => c.location === currentPaName);
-              
+              const isOccupied = Boolean(cpuInfo);
+
               return (
                 <div 
                   key={i} 
-                  className={`pa-slot ${occupancy ? 'occupied' : 'free'}`}
+                  className={`pa-slot ${isOccupied ? 'occupied' : 'free'}`}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, i)}
                   onClick={() => {
@@ -267,50 +268,35 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
                       setViewingCpuModal({ cpu: cpuInfo, paNumber: globalPaNumber, roomName: selectedRoom.name });
                     }
                   }}
-                  style={{ position: 'relative', cursor: cpuInfo ? 'pointer' : 'default' }}
+                  style={{ cursor: cpuInfo ? 'pointer' : 'default' }}
                 >
-                  <div className="pa-title">PA {String(globalPaNumber).padStart(2, '0')}</div>
-                  {cpuInfo ? (
-                    <>
-                      <div 
-                        className="cpu-drag-item"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, cpuInfo.id)}
-                      >
-                        {cpuInfo.code}
-                      </div>
+                  <div className="pa-header">
+                    <span className="pa-title">PA {String(globalPaNumber).padStart(2, '0')}</span>
+                    {cpuInfo && (
                       <button 
+                        className="pa-remove-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveCpuFromPa(cpuInfo.id);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: '-8px',
-                          right: '-8px',
-                          background: 'rgba(239, 68, 68, 0.9)',
-                          color: '#fff',
-                          border: '2px solid var(--surface-color)',
-                          borderRadius: '50%',
-                          width: '24px',
-                          height: '24px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 0,
-                          lineHeight: 1,
-                          boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                          backdropFilter: 'blur(4px)',
-                          zIndex: 10
                         }}
                         title="Devolver ao Estoque"
                       >
                         ✕
                       </button>
-                    </>
+                    )}
+                  </div>
+
+                  {cpuInfo ? (
+                    <div 
+                      className="cpu-drag-item"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, cpuInfo.id)}
+                    >
+                      <span className="cpu-code">{cpuInfo.code}</span>
+                      {cpuInfo.acquisition && (
+                        <span className="cpu-tag">{cpuInfo.acquisition}</span>
+                      )}
+                    </div>
                   ) : (
                     <div className="pa-empty-text">Vazio</div>
                   )}
