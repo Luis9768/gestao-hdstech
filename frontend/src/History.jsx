@@ -15,6 +15,9 @@ const formatDate = (dateVal) => {
 
 export default function History({ history, setHistory, updateData }) {
 
+  // Filtrar apenas histórico de movimentações de CPUs
+  const cpuHistory = (history || []).filter(entry => entry.cpuCode || entry.from || entry.to);
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -51,11 +54,11 @@ export default function History({ history, setHistory, updateData }) {
   };
 
   const handleExport = () => {
-    const dataToExport = history.map(entry => ({
-      'Data/Hora': new Date(entry.date).toLocaleString('pt-BR'),
-      'CPU': entry.cpuCode,
-      'Origem': entry.from,
-      'Destino': entry.to
+    const dataToExport = cpuHistory.map(entry => ({
+      'Data/Hora': formatDate(entry.date),
+      'CPU': entry.cpuCode || '-',
+      'Origem': entry.from || '-',
+      'Destino': entry.to || '-'
     }));
 
     exportToExcel(dataToExport, "Historico_Movimentacoes_CPUs.xlsx", "Histórico");
@@ -95,13 +98,13 @@ export default function History({ history, setHistory, updateData }) {
             </tr>
           </thead>
           <tbody>
-            {history.length > 0 ? (
-              history.map(entry => (
+            {cpuHistory.length > 0 ? (
+              cpuHistory.map(entry => (
                 <tr key={entry.id}>
                   <td style={{whiteSpace: 'nowrap'}}>{formatDate(entry.date)}</td>
-                  <td><strong>{entry.cpuCode}</strong></td>
-                  <td><span className="badge badge-outline">{entry.from}</span></td>
-                  <td><span className="badge badge-outline">{entry.to}</span></td>
+                  <td><strong>{entry.cpuCode || '-'}</strong></td>
+                  <td><span className="badge badge-outline">{entry.from || '-'}</span></td>
+                  <td><span className="badge badge-outline">{entry.to || '-'}</span></td>
                 </tr>
               ))
             ) : (
