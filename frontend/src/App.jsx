@@ -129,6 +129,13 @@ function App() {
     localStorage.removeItem('gestao-cpus-token');
   };
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="login-container flex items-center justify-center text-center">
@@ -146,35 +153,66 @@ function App() {
 
   return (
     <div className="app-container">
-      <aside className="sidebar">
-        <h2>Gestão de CPUs</h2>
+      {/* Header Fixo Exclusivo para Mobile */}
+      <header className="mobile-header">
+        <h2 className="mobile-title">Gestão de CPUs</h2>
+        <button 
+          className="hamburger-btn" 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Abrir menu"
+        >
+          {isMobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </header>
+
+      {/* Overlay Backdrop ao abrir o menu no Mobile */}
+      {isMobileMenuOpen && (
+        <div 
+          className="mobile-overlay" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Menu Lateral / Drawer */}
+      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-header flex justify-between items-center">
+          <h2>Gestão de CPUs</h2>
+          <button 
+            className="mobile-close-btn" 
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Fechar menu"
+          >
+            ✕
+          </button>
+        </div>
+
         <div className="user-info text-sm text-muted mb-4">
           Logado como:<br/><strong>{user?.name || user?.email}</strong><br/>
           <span style={{fontSize: '0.75rem', color: 'var(--primary-color)'}}>{user?.role === 'admin' ? 'Administrador' : 'Usuário Comum'}</span>
         </div>
         
         <nav className="flex flex-col gap-2">
-          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleNavClick('dashboard')}>
             Dashboard
           </div>
-          <div className={`nav-item ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => setActiveTab('rooms')}>
+          <div className={`nav-item ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => handleNavClick('rooms')}>
             Gestão de Salas
           </div>
-          <div className={`nav-item ${activeTab === 'headsets' ? 'active' : ''}`} onClick={() => setActiveTab('headsets')}>
+          <div className={`nav-item ${activeTab === 'headsets' ? 'active' : ''}`} onClick={() => handleNavClick('headsets')}>
             Gestão de Headsets
           </div>
-          <div className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
+          <div className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => handleNavClick('history')}>
             Histórico
           </div>
           {user?.role === 'admin' && (
             <>
-              <div className={`nav-item ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>
+              <div className={`nav-item ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => handleNavClick('inventory')}>
                 Estoque de CPUs
               </div>
-              <div className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+              <div className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => handleNavClick('users')}>
                 Gestão de Usuários
               </div>
-              <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+              <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => handleNavClick('settings')}>
                 Configurações
               </div>
             </>
