@@ -66,6 +66,11 @@ function App() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     const initData = async () => {
       setLoading(true);
       try {
@@ -75,29 +80,12 @@ function App() {
         }
       } catch (err) {
         console.error("Erro ao buscar dados da API", err);
-        // Default inicial para sala de TIM e Affix se estiver zerado na nuvem
-        applyDataState({
-          rooms: [
-            { id: 1, name: 'TIM', capacity: 24, paStatus: [] },
-            { id: 2, name: 'Affix', capacity: 28, paStatus: [] }
-          ],
-          cpus: [],
-          history: [],
-          users: [
-            {
-              id: 1,
-              name: 'Luis Miguel',
-              email: 'luis.miguel@headsetbrasil.com',
-              role: 'admin'
-            }
-          ]
-        });
       }
       setLoading(false);
     };
 
     initData();
-  }, []);
+  }, [isAuthenticated]);
 
   const updateData = async (newData) => {
     const payload = {
