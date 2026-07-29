@@ -9,6 +9,11 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
+// Suporte a serialização automática de BigInt em JSON no Express
+BigInt.prototype.toJSON = function () {
+  return Number(this);
+};
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
