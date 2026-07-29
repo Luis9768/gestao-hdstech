@@ -270,17 +270,14 @@ app.get('/api/all', async (req, res) => {
     const cpus = await prisma.cpu.findMany();
     const rooms = await prisma.room.findMany();
     const history = await prisma.history.findMany({ orderBy: { id: 'desc' } });
-    const users = await prisma.user.findMany();
     const headsetStock = await prisma.headsetStock.findMany();
     const headsetDefects = await prisma.headsetDefect.findMany();
     
-    // Parse JSON e sanitizar usuários
+    // Parse JSON
     const parsedCpus = cpus.map(c => ({...c, id: Number(c.id) || c.id}));
     const parsedStock = headsetStock.map(s => ({...s, id: Number(s.id) || s.id}));
     const parsedDefects = headsetDefects.map(d => ({...d, id: Number(d.id) || d.id}));
     const parsedHistory = history.map(h => ({...h, id: Number(h.id) || h.id}));
-    
-    const safeUsers = users.map(u => sanitizeUser(u));
 
     // Filtrar histórico de headsets a partir da tabela principal History
     const parsedHeadsetHistory = parsedHistory.filter(h => h.action || h.brand || h.qty);
@@ -289,12 +286,25 @@ app.get('/api/all', async (req, res) => {
       cpus: parsedCpus,
       rooms: rooms,
       history: parsedHistory,
-      users: safeUsers,
+      users: [], // Removido por segurança para não expor lista de contas no payload público
       headsetStock: parsedStock,
       headsetDefects: parsedDefects,
       headsetHistory: parsedHeadsetHistory
     });
   } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =======================
+// GET USERS (Dedicado e Seguro)
+// =======================
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    const safeUsers = users.map(u => sanitizeUser(u));
+    res.json({ users: safeUsers });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

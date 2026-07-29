@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from './api';
 
 export default function UsersManager({ usersList, setUsersList, updateData, currentUser }) {
@@ -11,6 +11,18 @@ export default function UsersManager({ usersList, setUsersList, updateData, curr
   const [role, setRole] = useState('user'); // admin ou user
 
   const isAdmin = currentUser?.role === 'admin';
+
+  useEffect(() => {
+    if (isAdmin) {
+      api.get('/users')
+        .then(res => {
+          if (res.data && res.data.users) {
+            setUsersList(res.data.users);
+          }
+        })
+        .catch(err => console.error("Erro ao buscar usuários:", err));
+    }
+  }, [isAdmin, setUsersList]);
 
   const openCreateModal = () => {
     setEditingUser(null);
