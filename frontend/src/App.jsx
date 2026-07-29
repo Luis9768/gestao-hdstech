@@ -126,6 +126,7 @@ function App() {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('gestao-cpus-user');
+    localStorage.removeItem('gestao-cpus-token');
   };
 
   if (loading) {

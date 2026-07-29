@@ -34,7 +34,10 @@ export default function Login({ onLogin }) {
       });
       
       if (response.data && response.data.user) {
-        onLogin(response.data.user);
+        if (response.data.token) {
+          localStorage.setItem('gestao-cpus-token', response.data.token);
+        }
+        onLogin(response.data.user, response.data.token);
       }
     } catch (err) {
       console.error(err);

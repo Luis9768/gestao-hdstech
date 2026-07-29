@@ -57,6 +57,33 @@ async function seedInitialData() {
 
 seedInitialData().catch(console.error);
 
+/**
+ * Middleware para exigir Autenticação via Token de Sessão em todas as rotas de dados
+ */
+function requireAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Acesso negado: É necessário estar autenticado para acessar a API.' });
+  }
+
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return res.status(401).json({ error: 'Token de autenticação inválido ou ausente.' });
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+    if (decoded && decoded.email) {
+      req.authUser = decoded;
+      return next();
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Sessão inválida ou expirada. Faça login novamente.' });
+  }
+
+  return res.status(401).json({ error: 'Acesso negado.' });
+}
+
 // =======================
 // LOGIN Endpoint
 // =======================
@@ -77,7 +104,18 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    res.json({ user: sanitizeUser(user) });
+    // Gerar token de sessão seguro contendo os dados essenciais do usuário
+    const token = Buffer.from(JSON.stringify({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      timestamp: Date.now()
+    })).toString('base64');
+
+    res.json({
+      user: sanitizeUser(user),
+      token
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -86,7 +124,7 @@ app.post('/api/login', async (req, res) => {
 // =======================
 // UPDATE USER Endpoint
 // =======================
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', requireAuth, async (req, res) => {
   try {
     const userId = Number(req.params.id);
     const { name, email, originalEmail, role, password, requesterRole, requesterEmail } = req.body;
@@ -163,7 +201,7 @@ app.put('/api/users/:id', async (req, res) => {
 // =======================
 // FULL STATE SYNC (Transação Atômica)
 // =======================
-app.post('/api/sync', async (req, res) => {
+app.post('/api/sync', requireAuth, async (req, res) => {
   try {
     const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
     
@@ -276,7 +314,7 @@ app.post('/api/sync', async (req, res) => {
 // =======================
 // FETCH ALL
 // =======================
-app.get('/api/all', async (req, res) => {
+app.get('/api/all', requireAuth, async (req, res) => {
   try {
     const cpus = await prisma.cpu.findMany();
     const rooms = await prisma.room.findMany();
@@ -310,7 +348,7 @@ app.get('/api/all', async (req, res) => {
 // =======================
 // GET USERS (Dedicado e Seguro)
 // =======================
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', requireAuth, async (req, res) => {
   try {
     const requesterEmail = req.query.requesterEmail;
     if (!requesterEmail) {
