@@ -13,8 +13,8 @@ export default function UsersManager({ usersList, setUsersList, updateData, curr
   const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
-    if (isAdmin) {
-      api.get('/users')
+    if (isAdmin && currentUser?.email) {
+      api.get('/users', { params: { requesterEmail: currentUser.email } })
         .then(res => {
           if (res.data && res.data.users) {
             setUsersList(res.data.users);
@@ -22,7 +22,7 @@ export default function UsersManager({ usersList, setUsersList, updateData, curr
         })
         .catch(err => console.error("Erro ao buscar usuários:", err));
     }
-  }, [isAdmin, setUsersList]);
+  }, [isAdmin, currentUser, setUsersList]);
 
   const openCreateModal = () => {
     setEditingUser(null);

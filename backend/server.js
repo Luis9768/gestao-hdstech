@@ -114,8 +114,14 @@ app.put('/api/users/:id', async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Regras de Permissão: Admin edita qualquer um; usuário comum apenas a si próprio
-    const isAdmin = requesterRole === 'admin';
+    // Regras de Permissão: Validar admin consultando o banco de dados
+    let isAdmin = false;
+    if (requesterEmail) {
+      const requesterUser = await prisma.user.findUnique({ where: { email: requesterEmail.toLowerCase() } });
+      if (requesterUser && requesterUser.role === 'admin') {
+        isAdmin = true;
+      }
+    }
     const isSelf = existing.email.toLowerCase() === (requesterEmail || '').toLowerCase();
 
     if (!isAdmin && !isSelf) {
@@ -306,6 +312,15 @@ app.get('/api/all', async (req, res) => {
 // =======================
 app.get('/api/users', async (req, res) => {
   try {
+    const requesterEmail = req.query.requesterEmail;
+    if (!requesterEmail) {
+      return res.status(401).json({ error: 'Acesso negado: E-mail de identificação necessário.' });
+    }
+    const requesterUser = await prisma.user.findUnique({ where: { email: String(requesterEmail).toLowerCase() } });
+    if (!requesterUser || requesterUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado: Apenas administradores podem visualizar contas.' });
+    }
+
     const users = await prisma.user.findMany();
     const safeUsers = users.map(u => sanitizeUser(u));
     res.json({ users: safeUsers });
