@@ -31,9 +31,10 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       return alert("Já existe uma sala com este nome.");
     }
     
+    const maxId = rooms.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
     const newRoom = {
-      id: Date.now(),
-      name: newRoomName,
+      id: maxId + 1,
+      name: newRoomName.trim(),
       capacity: Number(newRoomCapacity),
       paStatus: []
     };
@@ -98,7 +99,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
   const buildHistoryList = (cpuCode, fromLoc, toLoc) => ([
     {
-      id: Date.now(),
+      id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
       date: new Date().toISOString(),
       cpuCode,
       from: fromLoc,

@@ -39,7 +39,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
     }
 
     const newCpu = { 
-      id: Date.now(), 
+      id: Date.now() * 1000 + Math.floor(Math.random() * 1000), 
       code: finalCode, 
       acquisition: newAcquisition, 
       isAuditen,

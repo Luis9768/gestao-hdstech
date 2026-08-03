@@ -233,64 +233,97 @@ app.post('/api/sync', requireAuth, async (req, res) => {
       // 2. Sincronizar CPUs
       if (cpus && Array.isArray(cpus) && cpus.length > 0) {
         await tx.cpu.deleteMany();
-        await tx.cpu.createMany({
-          data: cpus.map(c => ({
-            id: BigInt(c.id),
+        const usedCpuIds = new Set();
+        const safeCpus = cpus.map((c, idx) => {
+          let rawId = BigInt(c.id || Date.now());
+          while (usedCpuIds.has(rawId.toString())) {
+            rawId = rawId + BigInt(1);
+          }
+          usedCpuIds.add(rawId.toString());
+          return {
+            id: rawId,
             code: c.code || '',
             acquisition: c.acquisition || '',
             isAuditen: Boolean(c.isAuditen),
             location: c.location || ''
-          }))
+          };
         });
+        await tx.cpu.createMany({ data: safeCpus });
       }
 
-      // 3. Sincronizar Salas
+      // 3. Sincronizar Salas (Garantir que ID cabe em Int de 32 bits do PostgreSQL)
       if (rooms && Array.isArray(rooms) && rooms.length > 0) {
         await tx.room.deleteMany();
         await tx.room.createMany({
-          data: rooms.map(r => ({
-            id: Number(r.id),
-            name: r.name,
-            capacity: Number(r.capacity),
-            paStatus: r.paStatus || []
-          }))
+          data: rooms.map((r, idx) => {
+            let safeId = Number(r.id);
+            if (isNaN(safeId) || safeId <= 0 || safeId > 2147483640) {
+              safeId = idx + 1;
+            }
+            return {
+              id: safeId,
+              name: r.name,
+              capacity: Number(r.capacity),
+              paStatus: r.paStatus || []
+            };
+          })
         });
       }
 
       // 4. Sincronizar Estoque Headsets
       if (headsetStock && Array.isArray(headsetStock) && headsetStock.length > 0) {
         await tx.headsetStock.deleteMany();
-        await tx.headsetStock.createMany({
-          data: headsetStock.map(s => ({
-            id: BigInt(s.id),
+        const usedStockIds = new Set();
+        const safeStock = headsetStock.map((s, idx) => {
+          let rawId = BigInt(s.id || Date.now());
+          while (usedStockIds.has(rawId.toString())) {
+            rawId = rawId + BigInt(1);
+          }
+          usedStockIds.add(rawId.toString());
+          return {
+            id: rawId,
             brand: s.brand,
             quantity: Number(s.quantity)
-          }))
+          };
         });
+        await tx.headsetStock.createMany({ data: safeStock });
       }
 
       // 5. Sincronizar Headsets Danificados
       if (headsetDefects && Array.isArray(headsetDefects) && headsetDefects.length > 0) {
         await tx.headsetDefect.deleteMany();
-        await tx.headsetDefect.createMany({
-          data: headsetDefects.map(d => ({
-            id: BigInt(d.id),
+        const usedDefectIds = new Set();
+        const safeDefects = headsetDefects.map((d, idx) => {
+          let rawId = BigInt(d.id || Date.now());
+          while (usedDefectIds.has(rawId.toString())) {
+            rawId = rawId + BigInt(1);
+          }
+          usedDefectIds.add(rawId.toString());
+          return {
+            id: rawId,
             date: d.date ? new Date(d.date) : new Date(),
             returnDate: d.returnDate ? new Date(d.returnDate) : null,
             brand: d.brand || '',
             defect: d.defect || '',
             status: d.status || '',
             box: d.box || ''
-          }))
+          };
         });
+        await tx.headsetDefect.createMany({ data: safeDefects });
       }
 
-      // 6. Sincronizar Histórico
+      // 6. Sincronizar Histórico (Garantir IDs Únicos e Válidos)
       if (history && Array.isArray(history) && history.length > 0) {
         await tx.history.deleteMany();
-        await tx.history.createMany({
-          data: history.map(h => ({
-            id: BigInt(h.id),
+        const usedHistoryIds = new Set();
+        const safeHistory = history.map((h, idx) => {
+          let rawId = BigInt(h.id || (Date.now() + idx));
+          while (usedHistoryIds.has(rawId.toString())) {
+            rawId = rawId + BigInt(1);
+          }
+          usedHistoryIds.add(rawId.toString());
+          return {
+            id: rawId,
             date: h.date ? new Date(h.date) : new Date(),
             action: h.action || null,
             cpuCode: h.cpuCode || null,
@@ -299,8 +332,9 @@ app.post('/api/sync', requireAuth, async (req, res) => {
             brand: h.brand || null,
             qty: h.qty ? Number(h.qty) : null,
             details: h.details || null
-          }))
+          };
         });
+        await tx.history.createMany({ data: safeHistory });
       }
     });
 
