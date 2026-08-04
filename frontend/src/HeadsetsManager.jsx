@@ -245,7 +245,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
         <div className="card">
           <h3 className="mb-4">Estoque de Headsets</h3>
           
-          <form onSubmit={handleAddStock} className="flex gap-4 mb-6 flex-wrap items-end">
+          <form onSubmit={handleAddStock} className="flex gap-4 mb-6 flex-wrap items-end headset-form">
             <div className="input-group flex-1">
               <label>Marca / Modelo</label>
               <input required type="text" className="premium-input" placeholder="Ex: Intelbras, Zox" value={newBrand} onChange={e => setNewBrand(e.target.value)} />
@@ -307,7 +307,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
               </label>
             </div>
 
-            <form onSubmit={handleAddDefect} className="flex gap-4 flex-wrap items-end">
+            <form onSubmit={handleAddDefect} className="flex gap-4 flex-wrap items-end headset-form">
               <div className="input-group flex-1">
                 <label>Marca / Modelo</label>
                 <input 
@@ -341,7 +341,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
           </div>
 
           <div className="card">
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4 list-header-responsive">
               <div className="flex items-center gap-4 flex-wrap">
                 <h3>Lista de Danificados e Caixas</h3>
                 <div className="flex gap-2 flex-wrap">
