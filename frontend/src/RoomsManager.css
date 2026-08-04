@@ -187,3 +187,49 @@
   border-radius: 6px;
   font-weight: 600;
 }
+
+.room-buttons-scroll {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Responsividade Mobile para Gestão de Salas */
+@media (max-width: 768px) {
+  .rooms-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .room-buttons-scroll {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .room-buttons-scroll button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .pa-grid {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important;
+    gap: 0.6rem !important;
+  }
+
+  .pa-slot {
+    min-height: 90px !important;
+    padding: 8px !important;
+  }
+
+  .pa-title {
+    font-size: 0.7rem !important;
+  }
+
+  .cpu-code {
+    font-size: 0.75rem !important;
+  }
+}

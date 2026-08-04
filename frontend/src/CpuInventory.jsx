@@ -147,7 +147,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
 
   return (
     <div className="cpu-inventory flex flex-col gap-4">
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="flex justify-between items-center flex-wrap gap-4 cpu-inventory-header">
         <h2>Estoque de CPUs</h2>
         <button 
           onClick={handleExport} 

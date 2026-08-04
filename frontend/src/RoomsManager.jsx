@@ -193,9 +193,9 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
   return (
     <div className="rooms-manager flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4 rooms-header">
         <h2>Gestão de Salas</h2>
-        <div className="flex gap-2 flex-wrap">
+        <div className="room-buttons-scroll">
           {rooms.map(r => (
             <button 
               key={r.id} 

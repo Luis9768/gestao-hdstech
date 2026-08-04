@@ -221,9 +221,9 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4 headsets-header">
         <h2>Gestão de Headsets</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 headsets-subtabs">
           <button 
             className={activeSubTab === 'stock' ? 'primary btn-glow' : ''}
             onClick={() => setActiveSubTab('stock')}
