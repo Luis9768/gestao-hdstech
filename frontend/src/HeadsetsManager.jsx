@@ -87,12 +87,19 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
       }
     }
     
+    if (!fromOperation) {
+      if (!currentStock || currentStock.quantity <= 0) {
+        alert(`Estoque insuficiente! Não há headsets funcionais da marca "${defectBrand}" para dar baixa.`);
+        return;
+      }
+    }
+    
     // Format BR Date
     const today = new Date();
     const formattedDate = new Date().toISOString();
 
     const newDefect = {
-      id: Date.now(),
+      id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
       date: formattedDate,
       brand: defectBrand,
       defect: defectDesc.trim(),
@@ -105,7 +112,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     // Deduct from stock if available and not from operations
     let newStock = [...stock];
     if (!fromOperation && currentStock && currentStock.quantity > 0) {
-      newStock = stock.map(s => s.brand.toLowerCase() === defectBrand.toLowerCase().trim() ? { ...s, quantity: s.quantity - 1 } : s);
+      newStock = stock.map(s => s.brand.toLowerCase() === defectBrand.toLowerCase().trim() ? { ...s, quantity: Math.max(0, s.quantity - 1) } : s);
       setStock(newStock);
     }
 

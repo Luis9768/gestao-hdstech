@@ -57,8 +57,63 @@ async function seedInitialData() {
 
 seedInitialData().catch(console.error);
 
+const crypto = require('crypto');
+const JWT_SECRET = process.env.JWT_SECRET || 'hdstech_secure_token_secret_2026_x89';
+
 /**
- * Middleware para exigir Autenticação via Token de Sessão em todas as rotas de dados
+ * Utilitários de Segurança e Geração de Tokens HMAC SHA-256
+ */
+function generateToken(payload) {
+  const dataStr = JSON.stringify(payload);
+  const base64Data = Buffer.from(dataStr, 'utf8').toString('base64url');
+  const hmac = crypto.createHmac('sha256', JWT_SECRET).update(base64Data).digest('base64url');
+  return `${base64Data}.${hmac}`;
+}
+
+function verifyToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  
+  // Suporte retrocompatível para transição suave de sessões ativas
+  if (parts.length !== 2) {
+    try {
+      const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+      if (decoded && decoded.email) return decoded;
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  const [base64Data, signature] = parts;
+  const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(base64Data).digest('base64url');
+  
+  try {
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedHmac);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
+    return JSON.parse(Buffer.from(base64Data, 'base64url').toString('utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Utilitário para evitar código duplicado ao gerar BigInts únicos em transações
+ */
+function generateUniqueBigInt(id, usedSet, fallbackIndex = 0) {
+  let rawId = BigInt(id || (Date.now() + fallbackIndex));
+  while (usedSet.has(rawId.toString())) {
+    rawId = rawId + BigInt(1);
+  }
+  usedSet.add(rawId.toString());
+  return rawId;
+}
+
+/**
+ * Middleware para exigir Autenticação via Token de Sessão Assinado em todas as rotas de dados
  */
 function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
@@ -67,21 +122,14 @@ function requireAuth(req, res, next) {
   }
 
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!token) {
-    return res.status(401).json({ error: 'Token de autenticação inválido ou ausente.' });
+  const decoded = verifyToken(token);
+  
+  if (decoded && decoded.email) {
+    req.authUser = decoded;
+    return next();
   }
 
-  try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
-    if (decoded && decoded.email) {
-      req.authUser = decoded;
-      return next();
-    }
-  } catch (err) {
-    return res.status(401).json({ error: 'Sessão inválida ou expirada. Faça login novamente.' });
-  }
-
-  return res.status(401).json({ error: 'Acesso negado.' });
+  return res.status(401).json({ error: 'Sessão inválida, expirada ou token adulterado. Faça login novamente.' });
 }
 
 // =======================
@@ -104,13 +152,13 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    // Gerar token de sessão seguro contendo os dados essenciais do usuário
-    const token = Buffer.from(JSON.stringify({
+    // Gerar token assinado com HMAC SHA-256
+    const token = generateToken({
       id: user.id,
       email: user.email,
       role: user.role,
       timestamp: Date.now()
-    })).toString('base64');
+    });
 
     res.json({
       user: sanitizeUser(user),
@@ -127,11 +175,10 @@ app.post('/api/login', async (req, res) => {
 app.put('/api/users/:id', requireAuth, async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const { name, email, originalEmail, role, password, requesterRole, requesterEmail } = req.body;
+    const { name, email, originalEmail, role, password } = req.body;
 
     let existing = null;
     
-    // Tenta encontrar por ID se for numérico válido
     if (!isNaN(userId) && Number.isInteger(userId)) {
       try {
         existing = await prisma.user.findUnique({ where: { id: userId } });
@@ -140,7 +187,6 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
       }
     }
 
-    // Fallback: Busca pelo e-mail se o ID for um timestamp do cliente ou não for encontrado
     if (!existing) {
       const searchEmail = originalEmail || email;
       if (searchEmail) {
@@ -152,21 +198,16 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Regras de Permissão: Validar admin consultando o banco de dados
-    let isAdmin = false;
-    if (requesterEmail) {
-      const requesterUser = await prisma.user.findUnique({ where: { email: requesterEmail.toLowerCase() } });
-      if (requesterUser && requesterUser.role === 'admin') {
-        isAdmin = true;
-      }
-    }
-    const isSelf = existing.email.toLowerCase() === (requesterEmail || '').toLowerCase();
+    // Regras de Permissão Segura: Usar req.authUser do token verificado
+    const authenticatedEmail = req.authUser?.email;
+    const requesterUser = authenticatedEmail ? await prisma.user.findUnique({ where: { email: authenticatedEmail.toLowerCase() } }) : null;
+    const isAdmin = requesterUser?.role === 'admin';
+    const isSelf = existing.email.toLowerCase() === (authenticatedEmail || '').toLowerCase();
 
     if (!isAdmin && !isSelf) {
       return res.status(403).json({ error: 'Acesso negado: Você só pode editar seu próprio perfil.' });
     }
 
-    // Se alterou o e-mail, verificar se já está cadastrado por outro usuário
     if (email && email.toLowerCase() !== existing.email.toLowerCase()) {
       const emailTaken = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
       if (emailTaken) {
@@ -178,12 +219,11 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email.toLowerCase();
     
-    if (role && isAdmin) {
-      updateData.role = role;
-    }
+    // Apenas admins podem alterar perfil/role de usuários
+    if (role && isAdmin) updateData.role = role;
 
     if (password && password.trim() !== '') {
-      updateData.password = await bcrypt.hash(password.trim(), 10);
+      updateData.password = await bcrypt.hash(password, 10);
     }
 
     const updatedUser = await prisma.user.update({
@@ -191,9 +231,8 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
       data: updateData
     });
 
-    res.json({ user: sanitizeUser(updatedUser), message: 'Usuário atualizado com sucesso' });
+    res.json({ user: sanitizeUser(updatedUser) });
   } catch (err) {
-    console.error("Erro ao atualizar usuário:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -205,7 +244,6 @@ app.post('/api/sync', requireAuth, async (req, res) => {
   try {
     const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
     
-    // Executa toda a sincronização dentro de uma única transação atômica
     await prisma.$transaction(async (tx) => {
       // 1. Sincronizar Usuários
       if (users && Array.isArray(users) && users.length > 0) {
@@ -234,24 +272,17 @@ app.post('/api/sync', requireAuth, async (req, res) => {
       if (cpus && Array.isArray(cpus) && cpus.length > 0) {
         await tx.cpu.deleteMany();
         const usedCpuIds = new Set();
-        const safeCpus = cpus.map((c, idx) => {
-          let rawId = BigInt(c.id || Date.now());
-          while (usedCpuIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedCpuIds.add(rawId.toString());
-          return {
-            id: rawId,
-            code: c.code || '',
-            acquisition: c.acquisition || '',
-            isAuditen: Boolean(c.isAuditen),
-            location: c.location || ''
-          };
-        });
+        const safeCpus = cpus.map((c, idx) => ({
+          id: generateUniqueBigInt(c.id, usedCpuIds, idx),
+          code: c.code || '',
+          acquisition: c.acquisition || '',
+          isAuditen: Boolean(c.isAuditen),
+          location: c.location || ''
+        }));
         await tx.cpu.createMany({ data: safeCpus });
       }
 
-      // 3. Sincronizar Salas (Garantir que ID cabe em Int de 32 bits do PostgreSQL)
+      // 3. Sincronizar Salas (Garantir que ID e capacidade cabem no Int de 32 bits do PostgreSQL)
       if (rooms && Array.isArray(rooms) && rooms.length > 0) {
         await tx.room.deleteMany();
         await tx.room.createMany({
@@ -260,10 +291,11 @@ app.post('/api/sync', requireAuth, async (req, res) => {
             if (isNaN(safeId) || safeId <= 0 || safeId > 2147483640) {
               safeId = idx + 1;
             }
+            let safeCapacity = Math.min(Math.max(1, Number(r.capacity) || 1), 1000);
             return {
               id: safeId,
               name: r.name,
-              capacity: Number(r.capacity),
+              capacity: safeCapacity,
               paStatus: r.paStatus || []
             };
           })
@@ -274,18 +306,11 @@ app.post('/api/sync', requireAuth, async (req, res) => {
       if (headsetStock && Array.isArray(headsetStock) && headsetStock.length > 0) {
         await tx.headsetStock.deleteMany();
         const usedStockIds = new Set();
-        const safeStock = headsetStock.map((s, idx) => {
-          let rawId = BigInt(s.id || Date.now());
-          while (usedStockIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedStockIds.add(rawId.toString());
-          return {
-            id: rawId,
-            brand: s.brand,
-            quantity: Number(s.quantity)
-          };
-        });
+        const safeStock = headsetStock.map((s, idx) => ({
+          id: generateUniqueBigInt(s.id, usedStockIds, idx),
+          brand: s.brand,
+          quantity: Number(s.quantity)
+        }));
         await tx.headsetStock.createMany({ data: safeStock });
       }
 
@@ -293,47 +318,33 @@ app.post('/api/sync', requireAuth, async (req, res) => {
       if (headsetDefects && Array.isArray(headsetDefects) && headsetDefects.length > 0) {
         await tx.headsetDefect.deleteMany();
         const usedDefectIds = new Set();
-        const safeDefects = headsetDefects.map((d, idx) => {
-          let rawId = BigInt(d.id || Date.now());
-          while (usedDefectIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedDefectIds.add(rawId.toString());
-          return {
-            id: rawId,
-            date: d.date ? new Date(d.date) : new Date(),
-            returnDate: d.returnDate ? new Date(d.returnDate) : null,
-            brand: d.brand || '',
-            defect: d.defect || '',
-            status: d.status || '',
-            box: d.box || ''
-          };
-        });
+        const safeDefects = headsetDefects.map((d, idx) => ({
+          id: generateUniqueBigInt(d.id, usedDefectIds, idx),
+          date: d.date ? new Date(d.date) : new Date(),
+          returnDate: d.returnDate ? new Date(d.returnDate) : null,
+          brand: d.brand || '',
+          defect: d.defect || '',
+          status: d.status || '',
+          box: d.box || ''
+        }));
         await tx.headsetDefect.createMany({ data: safeDefects });
       }
 
-      // 6. Sincronizar Histórico (Garantir IDs Únicos e Válidos)
+      // 6. Sincronizar Histórico
       if (history && Array.isArray(history) && history.length > 0) {
         await tx.history.deleteMany();
         const usedHistoryIds = new Set();
-        const safeHistory = history.map((h, idx) => {
-          let rawId = BigInt(h.id || (Date.now() + idx));
-          while (usedHistoryIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedHistoryIds.add(rawId.toString());
-          return {
-            id: rawId,
-            date: h.date ? new Date(h.date) : new Date(),
-            action: h.action || null,
-            cpuCode: h.cpuCode || null,
-            from: h.from || null,
-            to: h.to || null,
-            brand: h.brand || null,
-            qty: h.qty ? Number(h.qty) : null,
-            details: h.details || null
-          };
-        });
+        const safeHistory = history.map((h, idx) => ({
+          id: generateUniqueBigInt(h.id, usedHistoryIds, idx),
+          date: h.date ? new Date(h.date) : new Date(),
+          action: h.action || null,
+          cpuCode: h.cpuCode || null,
+          from: h.from || null,
+          to: h.to || null,
+          brand: h.brand || null,
+          qty: h.qty ? Number(h.qty) : null,
+          details: h.details || null
+        }));
         await tx.history.createMany({ data: safeHistory });
       }
     });
@@ -352,29 +363,28 @@ app.get('/api/all', requireAuth, async (req, res) => {
   try {
     const cpus = await prisma.cpu.findMany();
     const rooms = await prisma.room.findMany();
-    const history = await prisma.history.findMany({ orderBy: { id: 'desc' } });
+    const history = await prisma.history.findMany({ orderBy: { date: 'desc' } });
     const headsetStock = await prisma.headsetStock.findMany();
     const headsetDefects = await prisma.headsetDefect.findMany();
-    
-    // Parse JSON
-    const parsedCpus = cpus.map(c => ({...c, id: Number(c.id) || c.id}));
-    const parsedStock = headsetStock.map(s => ({...s, id: Number(s.id) || s.id}));
-    const parsedDefects = headsetDefects.map(d => ({...d, id: Number(d.id) || d.id}));
-    const parsedHistory = history.map(h => ({...h, id: Number(h.id) || h.id}));
 
-    // Filtrar histórico de headsets a partir da tabela principal History
-    const parsedHeadsetHistory = parsedHistory.filter(h => h.action || h.brand || h.qty);
+    const parsedHistory = history.map(h => ({
+      ...h,
+      id: Number(h.id)
+    }));
+
+    const headsetHistory = parsedHistory.filter(h => h.action || h.brand || h.qty);
 
     res.json({
-      cpus: parsedCpus,
-      rooms: rooms,
+      cpus,
+      rooms,
       history: parsedHistory,
-      users: [], // Removido por segurança para não expor lista de contas no payload público
-      headsetStock: parsedStock,
-      headsetDefects: parsedDefects,
-      headsetHistory: parsedHeadsetHistory
+      users: [],
+      headsetStock,
+      headsetDefects,
+      headsetHistory
     });
-  } catch(err) {
+  } catch (err) {
+    console.error("Erro em /api/all:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -384,11 +394,9 @@ app.get('/api/all', requireAuth, async (req, res) => {
 // =======================
 app.get('/api/users', requireAuth, async (req, res) => {
   try {
-    const requesterEmail = req.query.requesterEmail;
-    if (!requesterEmail) {
-      return res.status(401).json({ error: 'Acesso negado: E-mail de identificação necessário.' });
-    }
-    const requesterUser = await prisma.user.findUnique({ where: { email: String(requesterEmail).toLowerCase() } });
+    const authenticatedEmail = req.authUser?.email;
+    const requesterUser = authenticatedEmail ? await prisma.user.findUnique({ where: { email: authenticatedEmail.toLowerCase() } }) : null;
+
     if (!requesterUser || requesterUser.role !== 'admin') {
       return res.status(403).json({ error: 'Acesso negado: Apenas administradores podem visualizar contas.' });
     }

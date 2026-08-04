@@ -125,6 +125,13 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    setCpus([]);
+    setRooms([]);
+    setHistory([]);
+    setUsersList([]);
+    setHeadsetStock([]);
+    setHeadsetDefects([]);
+    setHeadsetHistory([]);
     localStorage.removeItem('gestao-cpus-user');
     localStorage.removeItem('gestao-cpus-token');
   };
