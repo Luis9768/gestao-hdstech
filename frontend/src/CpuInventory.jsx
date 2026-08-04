@@ -45,17 +45,17 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
     if (filterAuditen === 'sim' && !cpu.isAuditen) return false;
     if (filterAuditen === 'nao' && cpu.isAuditen) return false;
 
-    // 3. Pesquisa por Código da CPU (Suporta buscar por 'sem', 'sem código', 'sem identificação', etc.)
+    // 3. Pesquisa por Código da CPU (Suporta buscar por 'cpu sem código' / 'sem identificação')
     if (searchCode.trim()) {
       const query = searchCode.trim().toLowerCase();
       const codeLower = (cpu.code || '').toLowerCase();
       const isUnnamedCpu = codeLower.includes('sem identificação') || codeLower.includes('sem código') || codeLower === '' || codeLower === 'cpu sem código';
 
-      const isUnnamedQuery = query.includes('sem') || query.includes('nao') || query.includes('sem id');
-      if (isUnnamedQuery && isUnnamedCpu) {
-        return true;
+      if (query.includes('sem c') || query.includes('sem cod') || query.includes('sem id') || query.includes('sem ident')) {
+        if (!isUnnamedCpu) return false;
+      } else {
+        if (!codeLower.includes(query)) return false;
       }
-      if (!codeLower.includes(query)) return false;
     }
 
     return true;
