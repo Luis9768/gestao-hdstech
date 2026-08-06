@@ -33,10 +33,10 @@ export default function History({ history, setHistory, updateData }) {
         
         const newEntries = data.map((row, index) => ({
           id: Date.now() + index,
-          date: row.data || row.Date || row.Data || row['Data/Hora'] || new Date().toISOString(),
-          cpuCode: row.cpuCode || row.cpu || row.CPU || 'Desconhecido',
-          from: row.from || row.Origem || row.origem || 'N/A',
-          to: row.to || row.Destino || row.destino || 'N/A'
+          date: row.data || row.Date || row.Data || row['Data/Hora'] || row['DATA/HORA'] || new Date().toISOString(),
+          cpuCode: row.cpuCode || row.cpu || row.CPU || row.EQUIPAMENTO || row['CÓDIGO DA CPU'] || 'Desconhecido',
+          from: row.from || row.Origem || row.origem || row.ORIGEM || 'N/A',
+          to: row.to || row.Destino || row.destino || row.DESTINO || 'N/A'
         }));
 
         const mergedHistory = [...newEntries, ...history];

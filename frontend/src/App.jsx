@@ -341,8 +341,8 @@ function App() {
             setStock={setHeadsetStock} 
             defects={headsetDefects} 
             setDefects={setHeadsetDefects}
-            history={headsetHistory}
-            setHistory={setHeadsetHistory}
+            history={history}
+            setHistory={setHistory}
             updateData={updateData}
           />
         )}

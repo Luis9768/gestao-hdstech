@@ -313,28 +313,30 @@ app.post('/api/sync', requireAuth, async (req, res) => {
       }
 
       // 6. Sincronizar Histórico (Garantir IDs Únicos e Válidos)
-      if (history && Array.isArray(history) && history.length > 0) {
+      if (history && Array.isArray(history)) {
         await tx.history.deleteMany();
-        const usedHistoryIds = new Set();
-        const safeHistory = history.map((h, idx) => {
-          let rawId = BigInt(h.id || (Date.now() + idx));
-          while (usedHistoryIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedHistoryIds.add(rawId.toString());
-          return {
-            id: rawId,
-            date: h.date ? new Date(h.date) : new Date(),
-            action: h.action || null,
-            cpuCode: h.cpuCode || null,
-            from: h.from || null,
-            to: h.to || null,
-            brand: h.brand || null,
-            qty: h.qty ? Number(h.qty) : null,
-            details: h.details || null
-          };
-        });
-        await tx.history.createMany({ data: safeHistory });
+        if (history.length > 0) {
+          const usedHistoryIds = new Set();
+          const safeHistory = history.map((h, idx) => {
+            let rawId = BigInt(h.id || (Date.now() + idx));
+            while (usedHistoryIds.has(rawId.toString())) {
+              rawId = rawId + BigInt(1);
+            }
+            usedHistoryIds.add(rawId.toString());
+            return {
+              id: rawId,
+              date: h.date ? new Date(h.date) : new Date(),
+              action: h.action || null,
+              cpuCode: h.cpuCode || null,
+              from: h.from || null,
+              to: h.to || null,
+              brand: h.brand || null,
+              qty: h.qty ? Number(h.qty) : null,
+              details: h.details || null
+            };
+          });
+          await tx.history.createMany({ data: safeHistory });
+        }
       }
     });
 

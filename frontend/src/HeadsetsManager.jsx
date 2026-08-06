@@ -54,7 +54,8 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
     setStock(newStock);
     const newHist = logEvent('Entrada Manual', newBrand.trim(), qty, 'Adicionado ao estoque');
-    updateData({ headsetStock: newStock, headsetHistory: newHist, history: newHist });
+    const headsetOnlyHist = newHist.filter(h => h.action || h.brand || h.qty);
+    updateData({ headsetStock: newStock, headsetHistory: headsetOnlyHist, history: newHist });
     setNewBrand('');
     setNewQuantity('');
   };
@@ -69,7 +70,8 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     });
     setStock(newStock);
     const newHist = logEvent(delta > 0 ? 'Ajuste Manual (+)' : 'Ajuste Manual (-)', stock.find(s => s.id === id).brand, Math.abs(delta), 'Ajuste via botões rápidos');
-    updateData({ headsetStock: newStock, headsetHistory: newHist, history: newHist });
+    const headsetOnlyHist = newHist.filter(h => h.action || h.brand || h.qty);
+    updateData({ headsetStock: newStock, headsetHistory: headsetOnlyHist, history: newHist });
   };
 
   const handleAddDefect = (e) => {
@@ -111,7 +113,8 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
     setDefects(newDefectsList);
     const newHist = logEvent('Defeito Registrado', defectBrand, 1, fromOperation ? 'Veio da operação (Sem baixa no estoque)' : 'Baixa no estoque funcional');
-    updateData({ headsetStock: newStock, headsetDefects: newDefectsList, headsetHistory: newHist, history: newHist });
+    const headsetOnlyHist = newHist.filter(h => h.action || h.brand || h.qty);
+    updateData({ headsetStock: newStock, headsetDefects: newDefectsList, headsetHistory: headsetOnlyHist, history: newHist });
     
     setDefectDesc('');
     // Keep brand and box to facilitate multiple entries
@@ -166,7 +169,8 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     setStock(newStock);
     setDefects(newDefects);
     const newHist = logEvent('Retorno de Conserto', 'Múltiplos', headsetsToReturn.length, `Caixa ${boxName} recebida`);
-    updateData({ headsetStock: newStock, headsetDefects: newDefects, headsetHistory: newHist, history: newHist });
+    const headsetOnlyHist = newHist.filter(h => h.action || h.brand || h.qty);
+    updateData({ headsetStock: newStock, headsetDefects: newDefects, headsetHistory: headsetOnlyHist, history: newHist });
     alert(`${headsetsToReturn.length} headsets devolvidos ao estoque!`);
   };
 
@@ -448,17 +452,23 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                 </tr>
               </thead>
               <tbody>
-                {history.length === 0 ? (
-                  <tr><td colSpan="5" className="text-center text-muted py-4">Nenhum histórico registrado ainda.</td></tr>
-                ) : history.map(h => (
-                  <tr key={h.id}>
-                    <td style={{whiteSpace: 'nowrap'}}>{new Date(h.date).toLocaleString('pt-BR')}</td>
-                    <td><span className="badge badge-outline">{h.action}</span></td>
-                    <td style={{textTransform: 'capitalize'}}><strong>{h.brand}</strong></td>
-                    <td><span className="badge" style={{background: 'var(--text-muted)'}}>{h.qty}</span></td>
-                    <td className="text-muted">{h.details}</td>
-                  </tr>
-                ))}
+                {(() => {
+                  const headsetEvents = (history || []).filter(h => h.action || h.brand || h.qty);
+                  if (headsetEvents.length === 0) {
+                    return (
+                      <tr><td colSpan="5" className="text-center text-muted py-4">Nenhum histórico de headset registrado ainda.</td></tr>
+                    );
+                  }
+                  return headsetEvents.map(h => (
+                    <tr key={h.id}>
+                      <td style={{whiteSpace: 'nowrap'}}>{new Date(h.date).toLocaleString('pt-BR')}</td>
+                      <td><span className="badge badge-outline">{h.action}</span></td>
+                      <td style={{textTransform: 'capitalize'}}><strong>{h.brand}</strong></td>
+                      <td><span className="badge" style={{background: 'var(--text-muted)'}}>{h.qty}</span></td>
+                      <td className="text-muted">{h.details}</td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
