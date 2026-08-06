@@ -88,16 +88,25 @@ function App() {
   }, [isAuthenticated]);
 
   const updateData = async (newData) => {
+    if (!newData) return;
+    
+    if (newData.cpus) setCpus(newData.cpus);
+    if (newData.rooms) setRooms(newData.rooms);
+    if (newData.history) setHistory(newData.history);
+    if (newData.users) setUsersList(newData.users);
+    if (newData.headsetStock) setHeadsetStock(newData.headsetStock);
+    if (newData.headsetDefects) setHeadsetDefects(newData.headsetDefects);
+    if (newData.headsetHistory) setHeadsetHistory(newData.headsetHistory);
+
     const payload = {
-      cpus,
-      rooms,
-      history,
-      users: usersList,
-      headsetStock,
-      headsetDefects,
-      headsetHistory,
-      settings: { theme },
-      ...newData
+      cpus: newData.cpus || cpus,
+      rooms: newData.rooms || rooms,
+      history: newData.history || history,
+      users: newData.users || usersList,
+      headsetStock: newData.headsetStock || headsetStock,
+      headsetDefects: newData.headsetDefects || headsetDefects,
+      headsetHistory: newData.headsetHistory || headsetHistory,
+      settings: { theme }
     };
 
     // Salvar na nuvem (PostgreSQL via API)

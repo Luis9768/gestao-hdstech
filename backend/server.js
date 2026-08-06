@@ -312,18 +312,15 @@ app.post('/api/sync', requireAuth, async (req, res) => {
         await tx.headsetDefect.createMany({ data: safeDefects });
       }
 
-      // 6. Sincronizar Histórico (Garantir IDs Únicos e Válidos)
-      if (history && Array.isArray(history)) {
-        await tx.history.deleteMany();
-        if (history.length > 0) {
-          const usedHistoryIds = new Set();
-          const safeHistory = history.map((h, idx) => {
-            let rawId = BigInt(h.id || (Date.now() + idx));
-            while (usedHistoryIds.has(rawId.toString())) {
-              rawId = rawId + BigInt(1);
-            }
-            usedHistoryIds.add(rawId.toString());
-            return {
+      // 6. Sincronizar Histórico (NUNCA DELETAR - Acumulativo / Upsert Seguro)
+      if (history && Array.isArray(history) && history.length > 0) {
+        for (let idx = 0; idx < history.length; idx++) {
+          const h = history[idx];
+          let rawId = BigInt(h.id || (Date.now() + idx));
+          await tx.history.upsert({
+            where: { id: rawId },
+            update: {}, // Mantém inalterado caso o registro já exista no banco
+            create: {
               id: rawId,
               date: h.date ? new Date(h.date) : new Date(),
               action: h.action || null,
@@ -333,9 +330,8 @@ app.post('/api/sync', requireAuth, async (req, res) => {
               brand: h.brand || null,
               qty: h.qty ? Number(h.qty) : null,
               details: h.details || null
-            };
+            }
           });
-          await tx.history.createMany({ data: safeHistory });
         }
       }
     });
@@ -343,6 +339,32 @@ app.post('/api/sync', requireAuth, async (req, res) => {
     res.json({ success: true, message: 'Sync completed' });
   } catch (err) {
     console.error("Erro na sincronização:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =======================
+// DEDICATED HISTORY LOG ENDPOINT
+// =======================
+app.post('/api/history', requireAuth, async (req, res) => {
+  try {
+    const { id, date, action, cpuCode, from, to, brand, qty, details } = req.body;
+    let rawId = BigInt(id || Date.now());
+    const created = await prisma.history.create({
+      data: {
+        id: rawId,
+        date: date ? new Date(date) : new Date(),
+        action: action || null,
+        cpuCode: cpuCode || null,
+        from: from || null,
+        to: to || null,
+        brand: brand || null,
+        qty: qty ? Number(qty) : null,
+        details: details || null
+      }
+    });
+    res.json({ success: true, historyItem: { ...created, id: Number(created.id) } });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
