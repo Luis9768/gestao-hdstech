@@ -187,6 +187,56 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     exportToExcel(dataToExport, "headsets_danificados.xlsx", "Headsets Danificados");
   };
 
+  const matchesDateFilter = (itemDateStr, itemReturnDateStr, query) => {
+    if (!query) return true;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    const datesToTest = [];
+    if (itemDateStr) datesToTest.push(new Date(itemDateStr));
+    if (itemReturnDateStr) datesToTest.push(new Date(itemReturnDateStr));
+
+    for (const d of datesToTest) {
+      if (isNaN(d.getTime())) continue;
+
+      const day = String(d.getDate()).padStart(2, '0');
+      const dayNoZero = String(d.getDate());
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const monthNoZero = String(d.getMonth() + 1);
+      const year = String(d.getFullYear());
+      const shortYear = year.slice(-2);
+
+      const brFull = `${day}/${month}/${year}`;            // 28/07/2026
+      const brShort = `${day}/${month}/${shortYear}`;       // 28/07/26
+      const brDayMonth = `${day}/${month}`;                 // 28/07
+      const brDayMonthNoZero = `${dayNoZero}/${monthNoZero}`;// 28/7
+      const brDayOnly = `${day}/`;                          // 28/
+      const brDayNoZeroOnly = `${dayNoZero}/`;              // 28/
+      const isoDate = `${year}-${month}-${day}`;            // 2026-07-28
+
+      const localeStr = d.toLocaleString('pt-BR').toLowerCase();
+      const dateOnlyLocaleStr = d.toLocaleDateString('pt-BR').toLowerCase();
+
+      if (
+        brFull.includes(q) ||
+        brShort.includes(q) ||
+        brDayMonth.includes(q) ||
+        brDayMonthNoZero.includes(q) ||
+        brDayOnly.startsWith(q) ||
+        brDayNoZeroOnly.startsWith(q) ||
+        isoDate.includes(q) ||
+        localeStr.includes(q) ||
+        dateOnlyLocaleStr.includes(q)
+      ) {
+        return true;
+      }
+    }
+
+    const raw1 = String(itemDateStr || '').toLowerCase();
+    const raw2 = String(itemReturnDateStr || '').toLowerCase();
+    return raw1.includes(q) || raw2.includes(q);
+  };
+
   const filteredDefects = useMemo(() => {
     let result = defects;
     if (filterBox) {
@@ -194,12 +244,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     }
     if (filterDate) {
       const q = filterDate.trim().toLowerCase();
-      result = result.filter(d => {
-        const regFormatted = d.date ? new Date(d.date).toLocaleString('pt-BR').toLowerCase() : '';
-        const retFormatted = d.returnDate ? new Date(d.returnDate).toLocaleDateString('pt-BR').toLowerCase() : '';
-        const rawDateStr = String(d.date || '').toLowerCase();
-        return regFormatted.includes(q) || retFormatted.includes(q) || rawDateStr.includes(q);
-      });
+      result = result.filter(d => matchesDateFilter(d.date, d.returnDate, q));
     }
     if (filterStatus) {
       result = result.filter(d => d.status === filterStatus);
@@ -361,15 +406,28 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                       {uniqueBoxes.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
-                  <div className="input-group m-0">
+                  <div className="input-group m-0" style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
                     <input 
                       type="text" 
                       className="premium-input" 
-                      placeholder="Filtrar por data..." 
-                      style={{padding: '4px 12px', height: '32px', width: '130px'}} 
+                      placeholder="Filtrar data (ex: 28/07)" 
+                      style={{padding: '4px 26px 4px 10px', height: '32px', width: '160px'}} 
                       value={filterDate} 
                       onChange={e => setFilterDate(e.target.value)} 
                     />
+                    {filterDate && (
+                      <button 
+                        type="button"
+                        onClick={() => setFilterDate('')}
+                        style={{
+                          position: 'absolute', right: '6px', background: 'transparent', 
+                          border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem'
+                        }}
+                        title="Limpar data"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                   <div className="input-group m-0">
                     <select className="premium-input" style={{padding: '4px 12px', height: '32px'}} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
