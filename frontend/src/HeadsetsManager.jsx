@@ -193,7 +193,13 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
       result = result.filter(d => d.box.toLowerCase().includes(filterBox.toLowerCase()));
     }
     if (filterDate) {
-      result = result.filter(d => d.date.includes(filterDate));
+      const q = filterDate.trim().toLowerCase();
+      result = result.filter(d => {
+        const regFormatted = d.date ? new Date(d.date).toLocaleString('pt-BR').toLowerCase() : '';
+        const retFormatted = d.returnDate ? new Date(d.returnDate).toLocaleDateString('pt-BR').toLowerCase() : '';
+        const rawDateStr = String(d.date || '').toLowerCase();
+        return regFormatted.includes(q) || retFormatted.includes(q) || rawDateStr.includes(q);
+      });
     }
     if (filterStatus) {
       result = result.filter(d => d.status === filterStatus);
