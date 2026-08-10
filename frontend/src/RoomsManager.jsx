@@ -324,9 +324,9 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
             <div className="flex gap-2 flex-wrap">
               <button onClick={addPa} className="btn-sm" style={{border: '1px solid var(--border-color)'}}>+ Adicionar PA</button>
               <button onClick={removePa} className="btn-sm btn-danger">- Remover PA</button>
-              <button onClick={addSupervisionPa} className="btn-sm" style={{border: '1px solid #a855f7', color: '#a855f7', background: 'rgba(168, 85, 247, 0.08)'}}>+ PA Supervisão</button>
+              <button onClick={addSupervisionPa} className="btn-sm" style={{background: '#22c55e', color: '#ffffff', border: 'none', fontWeight: 'bold'}}>+ PA Supervisão</button>
               {supervisionCount > 0 && (
-                <button onClick={removeSupervisionPa} className="btn-sm" style={{border: '1px dashed #ef4444', color: '#ef4444', background: 'transparent'}}>- PA Supervisão</button>
+                <button onClick={removeSupervisionPa} className="btn-sm" style={{background: 'transparent', border: '1px dashed #22c55e', color: '#22c55e'}}>- PA Supervisão</button>
               )}
             </div>
           </div>
