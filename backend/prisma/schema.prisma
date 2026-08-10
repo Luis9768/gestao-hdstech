@@ -24,11 +24,10 @@ model Cpu {
 }
 
 model Room {
-  id                  Int      @id
-  name                String   @unique
-  capacity            Int
-  supervisionCapacity Int      @default(0)
-  paStatus            Json
+  id          Int      @id
+  name        String   @unique
+  capacity    Int
+  paStatus    Json
 }
 
 model HeadsetStock {
