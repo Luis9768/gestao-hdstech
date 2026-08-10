@@ -80,15 +80,52 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     if (selectedRoom.capacity <= 1) return;
     
     // Check if the last PA is occupied
-    const isOccupied = selectedRoom.paStatus.some(p => p.index === selectedRoom.capacity - 1);
+    const isOccupied = (selectedRoom.paStatus || []).some(p => !p.isSupervision && p.index === selectedRoom.capacity - 1);
     if (isOccupied) {
-      alert("A última PA está ocupada. Mova a CPU antes de remover a PA.");
+      alert("A última PA operacional está ocupada. Mova a CPU antes de remover a PA.");
       return;
     }
 
     const newRooms = rooms.map(r => {
       if (r.id === selectedRoom.id) {
         return { ...r, capacity: r.capacity - 1 };
+      }
+      return r;
+    });
+    setRooms(newRooms);
+    updateData({ rooms: newRooms });
+    setSelectedRoom(newRooms.find(r => r.id === selectedRoom.id));
+  };
+
+  const addSupervisionPa = () => {
+    if (!selectedRoom) return;
+    const currentSupCap = selectedRoom.supervisionCapacity || 0;
+    const newRooms = rooms.map(r => {
+      if (r.id === selectedRoom.id) {
+        return { ...r, supervisionCapacity: currentSupCap + 1 };
+      }
+      return r;
+    });
+    setRooms(newRooms);
+    updateData({ rooms: newRooms });
+    setSelectedRoom(newRooms.find(r => r.id === selectedRoom.id));
+  };
+
+  const removeSupervisionPa = () => {
+    if (!selectedRoom) return;
+    const currentSupCap = selectedRoom.supervisionCapacity || 0;
+    if (currentSupCap <= 0) return;
+
+    const lastSupIndex = currentSupCap - 1;
+    const isOccupied = (selectedRoom.paStatus || []).some(p => p.isSupervision && p.index === lastSupIndex);
+    if (isOccupied) {
+      alert("A última PA de Supervisão está ocupada. Mova a CPU antes de remover a PA.");
+      return;
+    }
+
+    const newRooms = rooms.map(r => {
+      if (r.id === selectedRoom.id) {
+        return { ...r, supervisionCapacity: currentSupCap - 1 };
       }
       return r;
     });
@@ -108,19 +145,32 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     ...history
   ]);
 
-  const handleCpuDrop = (cpuId, paIndex) => {
+  const handleCpuDrop = (cpuId, paIndex, isSupervision = false) => {
     const cpu = cpus.find(c => String(c.id) === String(cpuId));
     if (!cpu || !selectedRoom) return;
 
     // Check if PA is already occupied
-    if (selectedRoom.paStatus.some(p => p.index === paIndex)) {
-      alert("PA já está ocupada!");
+    const isOccupied = (selectedRoom.paStatus || []).some(p => 
+      isSupervision 
+        ? (p.isSupervision && p.index === paIndex)
+        : (!p.isSupervision && p.index === paIndex)
+    );
+
+    if (isOccupied) {
+      alert("Esta PA já está ocupada!");
       return;
     }
 
-    const globalPaNumber = getStartingPaNumber(selectedRoom.id) + paIndex;
     const oldLocation = cpu.location;
-    const newLocation = `${selectedRoom.name} - PA ${String(globalPaNumber).padStart(2, '0')}`;
+    let newLocation = '';
+
+    if (isSupervision) {
+      const supNumber = paIndex + 1;
+      newLocation = `${selectedRoom.name} - SUP ${String(supNumber).padStart(2, '0')}`;
+    } else {
+      const globalPaNumber = getStartingPaNumber(selectedRoom.id) + paIndex;
+      newLocation = `${selectedRoom.name} - PA ${String(globalPaNumber).padStart(2, '0')}`;
+    }
 
     // Update CPU location
     const newCpus = cpus.map(c => String(c.id) === String(cpuId) ? { ...c, location: newLocation } : c);
@@ -132,14 +182,15 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     if (oldLocation !== 'estoque') {
        newRooms = newRooms.map(r => ({
            ...r,
-           paStatus: r.paStatus.filter(p => String(p.cpuId) !== String(cpuId))
+           paStatus: (r.paStatus || []).filter(p => String(p.cpuId) !== String(cpuId))
        }));
     }
 
     // Add to new room
     newRooms = newRooms.map(r => {
        if (r.id === selectedRoom.id) {
-           return { ...r, paStatus: [...r.paStatus, { index: paIndex, cpuId }] };
+           const currentPaStatus = r.paStatus || [];
+           return { ...r, paStatus: [...currentPaStatus, { index: paIndex, isSupervision: Boolean(isSupervision), cpuId }] };
        }
        return r;
     });
@@ -165,7 +216,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     
     const newRooms = rooms.map(r => ({
         ...r,
-        paStatus: r.paStatus.filter(p => String(p.cpuId) !== String(cpuId))
+        paStatus: (r.paStatus || []).filter(p => String(p.cpuId) !== String(cpuId))
     }));
 
     const newHistoryList = buildHistoryList(cpu.code, oldLocation, newLocation);
@@ -186,9 +237,12 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     e.preventDefault();
   };
 
-  const handleDrop = (e, paIndex) => {
-    const cpuId = parseInt(e.dataTransfer.getData("cpuId"));
-    handleCpuDrop(cpuId, paIndex);
+  const handleDrop = (e, paIndex, isSupervision = false) => {
+    e.preventDefault();
+    const rawCpuId = e.dataTransfer.getData("cpuId");
+    if (!rawCpuId) return;
+    const cpuId = rawCpuId;
+    handleCpuDrop(cpuId, paIndex, isSupervision);
   };
 
   return (
@@ -239,31 +293,38 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
         <div className="card room-view">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <h3>{selectedRoom.name} - ({selectedRoom.capacity} PAs)</h3>
+              <h3>
+                {selectedRoom.name} - ({selectedRoom.capacity} PAs Operação
+                {selectedRoom.supervisionCapacity > 0 ? ` + ${selectedRoom.supervisionCapacity} Supervisão` : ''})
+              </h3>
               <button onClick={handleDeleteRoom} className="btn-sm" style={{background: 'transparent', color: '#ef4444', border: '1px dashed #ef4444'}}>Excluir Sala</button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button onClick={addPa} className="btn-sm" style={{border: '1px solid var(--border-color)'}}>+ Adicionar PA</button>
               <button onClick={removePa} className="btn-sm btn-danger">- Remover PA</button>
+              <button onClick={addSupervisionPa} className="btn-sm" style={{border: '1px solid #a855f7', color: '#a855f7', background: 'rgba(168, 85, 247, 0.08)'}}>+ PA Supervisão</button>
+              {(selectedRoom.supervisionCapacity || 0) > 0 && (
+                <button onClick={removeSupervisionPa} className="btn-sm" style={{border: '1px dashed #ef4444', color: '#ef4444', background: 'transparent'}}>- PA Supervisão</button>
+              )}
             </div>
           </div>
 
           <div className="pa-grid">
+            {/* PAs Operacionais (PA 01, PA 02...) */}
             {Array.from({ length: selectedRoom.capacity }).map((_, i) => {
               const globalPaNumber = getStartingPaNumber(selectedRoom.id) + i;
               const currentPaName = `${selectedRoom.name} - PA ${String(globalPaNumber).padStart(2, '0')}`;
-              const occupancy = selectedRoom.paStatus.find(p => p.index === i);
+              const occupancy = (selectedRoom.paStatus || []).find(p => !p.isSupervision && p.index === i);
               
-              // Busca por ID na paStatus (usando String) OU por correspondência na localização da CPU!
               const cpuInfo = (occupancy ? cpus.find(c => String(c.id) === String(occupancy.cpuId)) : null) || cpus.find(c => c.location === currentPaName);
               const isOccupied = Boolean(cpuInfo);
 
               return (
                 <div 
-                  key={i} 
+                  key={`op-${i}`} 
                   className={`pa-slot ${isOccupied ? 'occupied' : 'free'}`}
                   onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, i)}
+                  onDrop={(e) => handleDrop(e, i, false)}
                   onClick={() => {
                     if (cpuInfo) {
                       setViewingCpuModal({ cpu: cpuInfo, paNumber: globalPaNumber, roomName: selectedRoom.name });
@@ -303,6 +364,63 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
                     </div>
                   ) : (
                     <div className="pa-empty-text">Vazio</div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* PAs de Supervisão (SUP 01, SUP 02...) */}
+            {Array.from({ length: selectedRoom.supervisionCapacity || 0 }).map((_, s) => {
+              const supNumber = s + 1;
+              const currentSupPaName = `${selectedRoom.name} - SUP ${String(supNumber).padStart(2, '0')}`;
+              const occupancy = (selectedRoom.paStatus || []).find(p => p.isSupervision && p.index === s);
+              
+              const cpuInfo = (occupancy ? cpus.find(c => String(c.id) === String(occupancy.cpuId)) : null) || cpus.find(c => c.location === currentSupPaName);
+              const isOccupied = Boolean(cpuInfo);
+
+              return (
+                <div 
+                  key={`sup-${s}`} 
+                  className={`pa-slot supervision ${isOccupied ? 'occupied' : 'free'}`}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, s, true)}
+                  onClick={() => {
+                    if (cpuInfo) {
+                      setViewingCpuModal({ cpu: cpuInfo, paNumber: `SUP ${String(supNumber).padStart(2, '0')}`, roomName: selectedRoom.name });
+                    }
+                  }}
+                  style={{ cursor: cpuInfo ? 'pointer' : 'default' }}
+                >
+                  <div className="pa-header">
+                    <div className="pa-title-group">
+                      <span className="pa-status-dot sup-dot"></span>
+                      <span className="pa-title sup-title">SUP {String(supNumber).padStart(2, '0')}</span>
+                    </div>
+                    {cpuInfo && (
+                      <button 
+                        className="pa-remove-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveCpuFromPa(cpuInfo.id);
+                        }}
+                        title="Devolver ao Estoque"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {cpuInfo ? (
+                    <div 
+                      className="cpu-drag-item sup-drag-item"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, cpuInfo.id)}
+                    >
+                      <span className="cpu-code">{cpuInfo.code}</span>
+                      <span className="cpu-tag sup-tag">{cpuInfo.acquisition || 'SUPERVISÃO'}</span>
+                    </div>
+                  ) : (
+                    <div className="pa-empty-text" style={{color: '#c084fc'}}>Vazio (SUP)</div>
                   )}
                 </div>
               );
@@ -391,7 +509,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
               <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <span className="text-muted text-sm" style={{ display: 'block', marginBottom: '4px' }}>Localização Atual</span>
-                <strong>{viewingCpuModal.roomName} - PA {String(viewingCpuModal.paNumber).padStart(2, '0')}</strong>
+                <strong>{viewingCpuModal.roomName} - {typeof viewingCpuModal.paNumber === 'string' ? viewingCpuModal.paNumber : `PA ${String(viewingCpuModal.paNumber).padStart(2, '0')}`}</strong>
               </div>
             </div>
 
