@@ -264,6 +264,7 @@ app.post('/api/sync', requireAuth, async (req, res) => {
               id: safeId,
               name: r.name,
               capacity: Number(r.capacity),
+              supervisionCapacity: Number(r.supervisionCapacity || 0),
               paStatus: r.paStatus || []
             };
           })
