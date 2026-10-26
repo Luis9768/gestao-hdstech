@@ -154,7 +154,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
           className="primary badge" 
           style={{padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', border: 'none', background: 'var(--primary-color)', color: '#fff', fontSize: '0.95rem'}}
         >
-          📊 Exportar Excel ({filteredCpus.length})
+          Exportar Excel ({filteredCpus.length})
         </button>
       </div>
 
@@ -187,12 +187,12 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
 
       {/* Card de Filtros e Busca Inteligente */}
       <div className="card filter-cpu-card flex flex-col gap-4">
-        <h3 style={{fontSize: '1.1rem'}}>🔍 Filtros e Pesquisa de CPUs</h3>
+        <h3 style={{fontSize: '1.1rem'}}>Filtros e Pesquisa de CPUs</h3>
         <div className="flex gap-4 items-center flex-wrap">
           {/* Busca por Código */}
           <input 
             type="text" 
-            placeholder="🔎 Pesquisar por código (ex: 46361 ou 'cpu sem código')" 
+            placeholder="Pesquisar por código (ex: 46361 ou 'sem identificação')" 
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
             className="premium-input"
@@ -220,8 +220,8 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
             style={{flex: 1, minWidth: '180px'}}
           >
             <option value="todos">Todos (Auditen e Não Auditen)</option>
-            <option value="sim">✅ Apenas Auditen</option>
-            <option value="nao">❌ Apenas Não Auditen</option>
+            <option value="sim">Apenas Auditen</option>
+            <option value="nao">Apenas Não Auditen</option>
           </select>
         </div>
       </div>
@@ -232,35 +232,53 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
           <h3>CPUs Cadastradas ({filteredCpus.length} de {cpus.length})</h3>
         </div>
         <div className="cpu-grid mt-4">
-          {[...filteredCpus].reverse().map(cpu => (
-            <div key={cpu.id} className="cpu-item flex flex-col justify-between" style={{padding: '16px', background: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '12px'}}>
-              <div className="flex items-center justify-between mb-2">
-                <strong style={{fontSize: '1.2rem'}}>{cpu.code}</strong>
-                <span className={`acq-badge acq-${(cpu.acquisition || 'estoque').toLowerCase()}`}>{cpu.acquisition || 'Estoque'}</span>
-              </div>
-              
-              <div className="flex gap-2 mb-4 text-sm text-muted">
-                <span>{cpu.isAuditen ? '✅ Auditen' : '❌ Não Auditen'}</span>
-                <span>•</span>
-                <span>{cpu.location === 'estoque' ? 'No Estoque' : cpu.location}</span>
-              </div>
+          {[...filteredCpus].reverse().map(cpu => {
+            const isUnidentified = !cpu.code || 
+              cpu.code.trim() === '' || 
+              cpu.code.toLowerCase().includes('sem id') || 
+              cpu.code.toLowerCase().includes('sem identi');
 
-              <div className="flex items-center gap-2 mt-auto pt-4" style={{borderTop: '1px solid var(--border-color)'}}>
-                <button 
-                  onClick={() => startEdit(cpu)} 
-                  style={{flex: 1, background: 'var(--bg-color)', color: 'var(--text-color)', border: '1px solid var(--border-color)'}}
-                >
-                  Editar
-                </button>
-                <button 
-                  onClick={() => handleRemove(cpu.id)} 
-                  style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444'}}
-                >
-                  Excluir
-                </button>
+            return (
+              <div key={cpu.id} className="cpu-inventory-card">
+                <div className="cpu-card-header">
+                  <strong className={`cpu-card-code ${isUnidentified ? 'unidentified' : ''}`}>
+                    {isUnidentified ? 'CPU sem identificação' : cpu.code}
+                  </strong>
+                  <span className={`cpu-acq-pill acq-${(cpu.acquisition || 'estoque').toLowerCase()}`}>
+                    {cpu.acquisition || 'Estoque'}
+                  </span>
+                </div>
+
+                <div className="cpu-card-meta">
+                  <span className={`audit-badge ${cpu.isAuditen ? 'auditen-active' : 'auditen-inactive'}`}>
+                    <span className="audit-dot" />
+                    {cpu.isAuditen ? 'Auditen' : 'Não Auditen'}
+                  </span>
+                  <span className="cpu-meta-sep">•</span>
+                  <span className="cpu-location-text">
+                    {cpu.location === 'estoque' ? 'No Estoque' : cpu.location}
+                  </span>
+                </div>
+
+                <div className="cpu-card-actions">
+                  <button 
+                    type="button"
+                    onClick={() => startEdit(cpu)} 
+                    className="cpu-btn-edit"
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemove(cpu.id)} 
+                    className="cpu-btn-delete"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filteredCpus.length === 0 && (
             <p className="text-muted" style={{padding: '1rem'}}>
               Nenhuma CPU encontrada com os filtros selecionados.

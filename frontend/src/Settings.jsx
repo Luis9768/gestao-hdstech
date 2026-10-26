@@ -1,83 +1,112 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { saveWorkbook } from './utils/excelExporter';
+import api from './api';
 
 export default function Settings({ cpus, rooms, history, usersList, headsetStock, headsetDefects, headsetHistory }) {
+  const [isExporting, setIsExporting] = useState(false);
   
-  const handleMasterBackup = () => {
+  const handleMasterBackup = async () => {
+    setIsExporting(true);
     try {
       const workbook = XLSX.utils.book_new();
 
       // 1. CPUs
       const cpusSheet = XLSX.utils.json_to_sheet((cpus || []).map(c => ({
-        'ID PATRIMÔNIO': c.id,
-        'NOME (ANYDESK)': c.name,
-        'LOCALIZAÇÃO': c.location === 'estoque' ? 'Estoque' : c.location,
-        'DATA REGISTRO': c.date
+        'ID': c.id != null ? String(c.id) : '-',
+        'CÓDIGO / IDENTIFICAÇÃO': c.code || c.name || 'Sem Identificação',
+        'AQUISIÇÃO / PERTENCE': c.acquisition || '-',
+        'AUDITADO': c.isAuditen ? 'Sim' : 'Não',
+        'LOCALIZAÇÃO': c.location === 'estoque' ? 'Estoque' : (c.location || '-')
       })));
       XLSX.utils.book_append_sheet(workbook, cpusSheet, "CPUs e Equipamentos");
 
       // 2. Salas
-      const roomsSheet = XLSX.utils.json_to_sheet((rooms || []).map(r => ({
-        'NOME DA SALA': r.name,
-        'Nº PA(s) LIGADAS': r.pas.length
-      })));
+      const roomsSheet = XLSX.utils.json_to_sheet((rooms || []).map(r => {
+        let occupiedCount = 0;
+        if (Array.isArray(r.paStatus)) {
+          occupiedCount = r.paStatus.filter(p => p && p.cpuId).length;
+        }
+        return {
+          'NOME DA SALA': r.name || '-',
+          'CAPACIDADE TOTAL': Number(r.capacity) || 0,
+          'Nº PA(s) OCUPADAS': occupiedCount
+        };
+      }));
       XLSX.utils.book_append_sheet(workbook, roomsSheet, "Salas");
 
       // 3. Estoque Headsets
       const headsetStockSheet = XLSX.utils.json_to_sheet((headsetStock || []).map(s => ({
-        'MARCA / MODELO': s.brand,
-        'QUANTIDADE FUNCIONAL': s.quantity
+        'MARCA / MODELO': s.brand || '-',
+        'QUANTIDADE FUNCIONAL': Number(s.quantity) || 0
       })));
       XLSX.utils.book_append_sheet(workbook, headsetStockSheet, "Estoque de Headsets");
 
       // 4. Headsets Danificados (Caixas)
       const headsetDefectsSheet = XLSX.utils.json_to_sheet((headsetDefects || []).map(d => ({
-        'DATA REGISTRO': d.date,
-        'DATA RETORNO': d.returnDate || '-',
-        'MODELO': d.brand,
-        'DEFEITO': d.defect,
-        'STATUS': d.status,
-        'CAIXA': d.box
+        'DATA REGISTRO': d.date ? new Date(d.date).toLocaleString('pt-BR') : '-',
+        'DATA RETORNO': d.returnDate ? new Date(d.returnDate).toLocaleString('pt-BR') : '-',
+        'MODELO': d.brand || '-',
+        'DEFEITO': d.defect || '-',
+        'STATUS': d.status || '-',
+        'CAIXA': d.box || '-'
       })));
       XLSX.utils.book_append_sheet(workbook, headsetDefectsSheet, "Headsets Danificados");
 
       // 5. Histórico CPUs
       const histCpusSheet = XLSX.utils.json_to_sheet((history || []).map(h => ({
-        'DATA/HORA': h.date,
-        'AÇÃO': h.action,
-        'EQUIPAMENTO': h.cpu,
-        'ORIGEM': h.from,
-        'DESTINO': h.to
+        'DATA/HORA': h.date ? new Date(h.date).toLocaleString('pt-BR') : '-',
+        'AÇÃO': h.action || '-',
+        'EQUIPAMENTO': h.cpuCode || h.cpu || '-',
+        'ORIGEM': h.from || '-',
+        'DESTINO': h.to || '-',
+        'DETALHES': h.details || '-'
       })));
       XLSX.utils.book_append_sheet(workbook, histCpusSheet, "Histórico CPUs");
 
       // 6. Histórico Headsets
       const histHeadsetsSheet = XLSX.utils.json_to_sheet((headsetHistory || []).map(h => ({
-        'DATA/HORA': h.date,
-        'AÇÃO': h.action,
-        'MARCA / MODELO': h.brand,
-        'QUANTIDADE': h.qty,
-        'DETALHES': h.details
+        'DATA/HORA': h.date ? new Date(h.date).toLocaleString('pt-BR') : '-',
+        'AÇÃO': h.action || '-',
+        'MARCA / MODELO': h.brand || '-',
+        'QUANTIDADE': h.qty != null ? Number(h.qty) : '-',
+        'DETALHES': h.details || '-'
       })));
       XLSX.utils.book_append_sheet(workbook, histHeadsetsSheet, "Histórico Headsets");
 
-      // 7. Usuários
-      const usersSheet = XLSX.utils.json_to_sheet((usersList || []).map(u => ({
-        'NOME': u.name,
-        'EMAIL': u.email,
+      // 7. Usuários (Garante busca da lista se ainda não foi visitada a aba de usuários)
+      let effectiveUsers = usersList || [];
+      if (effectiveUsers.length === 0) {
+        try {
+          const res = await api.get('/users');
+          if (res.data && res.data.users) {
+            effectiveUsers = res.data.users;
+          }
+        } catch (e) {
+          console.warn("Não foi possível carregar a lista completa de usuários para o backup:", e);
+        }
+      }
+
+      const usersSheet = XLSX.utils.json_to_sheet(effectiveUsers.map(u => ({
+        'NOME': u.name || '-',
+        'EMAIL': u.email || '-',
         'NÍVEL DE ACESSO': u.role === 'admin' ? 'Administrador' : 'Comum'
       })));
       XLSX.utils.book_append_sheet(workbook, usersSheet, "Usuários do Sistema");
 
-      // Generate File Name with Date
+      // Gera o nome do arquivo com timestamp legível
       const today = new Date();
       const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-      
-      XLSX.writeFile(workbook, `Backup_Master_GestaoCPUs_${dateStr}.xlsx`);
-      alert("✅ Backup Mestre exportado com sucesso!");
+      const fileName = `Backup_Master_GestaoTI_${dateStr}.xlsx`;
+
+      // Download 100% seguro no navegador via Blob (compatível com todos os browsers)
+      saveWorkbook(workbook, fileName);
+      alert("✅ Backup Mestre gerado e baixado com sucesso!");
     } catch (error) {
-      console.error(error);
-      alert("❌ Ocorreu um erro ao gerar o backup master.");
+      console.error("Erro ao gerar o backup master:", error);
+      alert("❌ Ocorreu um erro ao gerar o backup master. Detalhes: " + (error.message || error));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -125,10 +154,11 @@ export default function Settings({ cpus, rooms, history, usersList, headsetStock
           <div style={{padding: '24px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', textAlign: 'center'}}>
             <button 
               onClick={handleMasterBackup}
+              disabled={isExporting}
               className="primary btn-glow" 
-              style={{padding: '16px 32px', fontSize: '1.1rem', width: '100%'}}
+              style={{padding: '16px 32px', fontSize: '1.1rem', width: '100%', opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'wait' : 'pointer'}}
             >
-              📥 Baixar Master Backup (.xlsx)
+              {isExporting ? '⏳ Gerando Planilha...' : '📥 Baixar Master Backup (.xlsx)'}
             </button>
             <p className="text-sm text-muted mt-4">
               Recomendamos fazer o download deste backup uma vez por mês como segurança extra offline.

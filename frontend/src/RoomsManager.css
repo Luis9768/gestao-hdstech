@@ -1,54 +1,360 @@
-/* =========================================================
- * Gestão de Salas & PAs - Premium Minimalist Design (Anthropic UI/UX)
- * ========================================================= */
+/* ==========================================================================
+ * Gestão de Salas & PAs — Obsidian & Violet Design System (Linear / Vercel Grade)
+ * ========================================================================== */
 
-.pa-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-  gap: 0.9rem;
-  margin-top: 1.2rem;
+.rooms-header {
+  margin-bottom: 1.5rem;
 }
 
+.room-buttons-scroll {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.room-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.room-tab-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.room-tab-btn.active {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 16px rgba(124, 58, 237, 0.45);
+}
+
+.room-tab-count {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+ * Room View Main Container
+ * ========================================================================== */
+.room-view {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Room Header & Toolbar */
+.room-toolbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 1.25rem;
+}
+
+.room-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.room-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+
+.room-name-text {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.room-meta-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.room-meta-pill.sup {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+/* Segmented Buttons Group (Toolbar) */
+.room-action-toolbars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.segmented-btn-group {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.segmented-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.segmented-btn.btn-sup {
+  color: #4ade80;
+}
+
+.segmented-btn.btn-sup:hover {
+  background: rgba(34, 197, 94, 0.18);
+  color: #ffffff;
+}
+
+.segmented-btn.danger-action {
+  color: #f87171;
+}
+
+.segmented-btn.danger-action:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ffffff;
+}
+
+/* Room Sub-toolbar (Search, Filters & Progress) */
+.room-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.room-filter-tabs {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.room-filter-pill {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.room-filter-pill:hover {
+  color: #ffffff;
+}
+
+.room-filter-pill.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.room-search-input-wrapper {
+  position: relative;
+  min-width: 200px;
+}
+
+.room-search-input {
+  width: 100%;
+  padding: 7px 12px 7px 36px !important;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.room-search-input:focus {
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+.room-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+ * PA Matrix Grid & Cards (Workstation Slots)
+ * ========================================================================== */
+.pa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.9rem;
+}
+
+/* Base PA Slot (Sleek Vercel / Linear Workstation Card) */
 .pa-slot {
   position: relative;
-  border-radius: 12px;
-  min-height: 108px;
-  padding: 12px;
+  border-radius: 8px;
+  min-height: 104px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  background: var(--surface-color);
-  border: 1px dashed var(--border-color);
-  backdrop-filter: blur(12px);
+  transition: all 0.18s ease;
+  overflow: hidden;
+}
+
+/* Slot Livre (Free Workstation) */
+.pa-slot.free {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  cursor: default;
 }
 
 .pa-slot.free:hover {
-  border-color: var(--primary-color);
-  background: rgba(59, 130, 246, 0.04);
-  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-/* Occupied Card - Sleek Slate Glassmorphism */
+.pa-slot.free .pa-title {
+  color: #71717a;
+}
+
+.pa-free-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: auto 0;
+}
+
+.pa-free-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+  transition: all 0.18s ease;
+}
+
+.pa-slot.free:hover .pa-free-icon {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #d4d4d8;
+}
+
+.pa-empty-text {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #71717a;
+  letter-spacing: 0.02em;
+}
+
+.pa-slot.free:hover .pa-empty-text {
+  color: #a1a1aa;
+}
+
+/* Slot Ocupado (Occupied Workstation) */
 .pa-slot.occupied {
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  background: rgba(59, 130, 246, 0.06);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme='dark'] .pa-slot.occupied {
-  background: rgba(30, 41, 59, 0.65);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background: #111017;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: grab;
 }
 
 .pa-slot.occupied:hover {
-  transform: translateY(-3px);
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+  background: #15131e;
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* PA Header */
+.pa-slot.occupied:active {
+  cursor: grabbing;
+}
+
+.pa-slot.occupied .pa-title {
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+/* Drag & Drop Feedback Visual */
+.pa-slot.drag-over {
+  border: 2px dashed #a855f7 !important;
+  background: rgba(124, 58, 237, 0.12) !important;
+  transform: scale(1.02) !important;
+}
+
+/* Slot Dimmed (quando filtrado) */
+.pa-slot.dimmed {
+  opacity: 0.2;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
+/* Slot Header */
 .pa-header {
   display: flex;
   justify-content: space-between;
@@ -59,215 +365,233 @@
 .pa-title-group {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.pa-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--text-muted);
-  opacity: 0.4;
-}
-
-.pa-slot.occupied .pa-status-dot {
-  background-color: #38bdf8;
-  opacity: 1;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
 }
 
 .pa-title {
-  font-weight: 700;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #71717a;
+  letter-spacing: 0.04em;
 }
 
-.pa-slot.occupied .pa-title {
-  color: #38bdf8;
-}
-
-/* Remove Button */
+/* Remove Button (✕) — Micro-interação Discreta */
 .pa-remove-btn {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: transparent;
+  color: #71717a;
   border: none;
-  border-radius: 6px;
-  width: 20px;
-  height: 20px;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  opacity: 0.5;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
 }
 
-.pa-slot:hover .pa-remove-btn {
-  opacity: 1;
+.pa-slot.occupied:hover .pa-remove-btn {
+  opacity: 0.8;
 }
 
 .pa-remove-btn:hover {
-  background: #ef4444;
-  color: #ffffff;
-  transform: scale(1.15);
+  opacity: 1 !important;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
-/* PA Empty State */
-.pa-empty-text {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-align: center;
-  margin: auto 0;
-  font-weight: 500;
-  opacity: 0.5;
-  letter-spacing: 0.3px;
-}
-
-/* CPU Item Container */
+/* CPU Item inside Slot */
 .cpu-drag-item {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 6px 8px;
-  cursor: grab;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  transition: all 0.2s ease;
+  gap: 6px;
   margin-top: 4px;
 }
 
-[data-theme='light'] .cpu-drag-item {
-  background: #ffffff;
-  border-color: var(--border-color);
+.cpu-code-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
-.cpu-drag-item:hover {
-  border-color: #38bdf8;
-  background: rgba(56, 189, 248, 0.06);
+.cpu-icon-svg {
+  color: #71717a;
+  flex-shrink: 0;
 }
 
-.cpu-drag-item:active {
-  cursor: grabbing;
+.cpu-icon-svg.sup {
+  color: #4ade80;
 }
 
 .cpu-code {
-  font-size: 0.88rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-color);
-  letter-spacing: 0.3px;
-  word-break: break-all;
-  text-align: center;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
+.cpu-code.unidentified {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #fbbf24;
+  letter-spacing: normal;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+/* CPU Belonging Tag */
 .cpu-tag {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(56, 189, 248, 0.12);
-  color: #38bdf8;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-/* Global Badges */
-.badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 6px;
+  gap: 4px;
+  align-self: flex-start;
+  font-size: 0.65rem;
   font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-/* Supervision PA Slots - Vibrant Green Accent */
-.pa-slot.supervision {
-  border: 1px dashed rgba(34, 197, 94, 0.5) !important;
-  background: rgba(34, 197, 94, 0.06) !important;
+.cpu-tag.loan-badge {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
-.pa-slot.supervision:hover {
-  border-color: #22c55e !important;
-  background: rgba(34, 197, 94, 0.12) !important;
+/* Supervision Section & Cards */
+.supervision-section-wrapper {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.supervision-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.supervision-header-title {
+  color: #4ade80;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.supervision-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.pa-slot.supervision.free {
+  border: 1px dashed rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.02);
+}
+
+.pa-slot.supervision.free:hover {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.04);
 }
 
 .pa-slot.supervision.occupied {
-  border: 1px solid rgba(34, 197, 94, 0.6) !important;
-  background: rgba(34, 197, 94, 0.14) !important;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.15) !important;
+  background: #0d1510;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme='dark'] .pa-slot.supervision.occupied {
-  background: rgba(20, 83, 45, 0.45) !important;
-  border: 1px solid rgba(34, 197, 94, 0.5) !important;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.2) !important;
-}
-
-.sup-dot {
-  background-color: #22c55e !important;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.9) !important;
+.pa-slot.supervision.occupied:hover {
+  background: #101c15;
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .sup-title {
-  color: #22c55e !important;
-  font-weight: 800 !important;
+  color: #4ade80 !important;
+  font-weight: 700 !important;
 }
 
 .sup-tag {
-  background: rgba(34, 197, 94, 0.25) !important;
+  background: rgba(34, 197, 94, 0.1) !important;
   color: #4ade80 !important;
+  border-color: rgba(34, 197, 94, 0.25) !important;
 }
 
-.room-buttons-scroll {
+.pa-free-icon.sup {
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+
+.pa-empty-text.sup {
+  color: #4ade80;
+}
+
+/* ==========================================================================
+ * Modals & Dialogs (Swap, Pertence, Replace)
+ * ========================================================================== */
+.swap-preview-box {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin: 1.25rem 0;
+  gap: 14px;
 }
 
-/* Responsividade Mobile para Gestão de Salas */
-@media (max-width: 768px) {
-  .rooms-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.75rem !important;
-  }
+.swap-side {
+  flex: 1;
+  text-align: center;
+}
 
-  .room-buttons-scroll {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    width: 100%;
-    padding-bottom: 0.5rem;
-    -webkit-overflow-scrolling: touch;
-  }
+.swap-side strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
 
-  .room-buttons-scroll button {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
+.swap-side span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
 
-  .pa-grid {
-    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important;
-    gap: 0.6rem !important;
-  }
+.swap-arrow-icon {
+  font-size: 1.25rem;
+  color: var(--primary-text);
+  padding: 6px;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.15);
+}
 
-  .pa-slot {
-    min-height: 90px !important;
-    padding: 8px !important;
-  }
-
-  .pa-title {
-    font-size: 0.7rem !important;
-  }
-
-  .cpu-code {
-    font-size: 0.75rem !important;
-  }
+/* Drag Target Room Tab Highlight */
+.room-tab-btn.drag-target-room {
+  border-color: #a855f7 !important;
+  background: rgba(124, 58, 237, 0.28) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
 }

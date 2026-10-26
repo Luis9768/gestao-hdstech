@@ -3,7 +3,26 @@ import { exportToExcel } from './utils/excelExporter';
 import './History.css';
 
 export default function HeadsetsManager({ stock, setStock, defects, setDefects, history = [], setHistory, updateData }) {
-  const [activeSubTab, setActiveSubTab] = useState('stock'); // 'stock', 'defects', 'history'
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gestao-cpus-headsets-subtab');
+      if (saved && ['stock', 'defects', 'history'].includes(saved)) {
+        return saved;
+      }
+    } catch {
+      // Ignora erro
+    }
+    return 'stock';
+  });
+
+  const handleSubTabChange = (tab) => {
+    setActiveSubTab(tab);
+    try {
+      localStorage.setItem('gestao-cpus-headsets-subtab', tab);
+    } catch {
+      // Ignora erro
+    }
+  };
 
   // Stock Form State
   const [newBrand, setNewBrand] = useState('');
@@ -23,7 +42,6 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
   const [showReceiveModal, setShowReceiveModal] = useState(false);
 
   const logEvent = (action, brand, qty, details) => {
-    const today = new Date();
     const formattedDate = new Date().toISOString();
     const newEntry = {
       id: Date.now() + Math.floor(Math.random() * 1000),
@@ -90,7 +108,6 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     }
     
     // Format BR Date
-    const today = new Date();
     const formattedDate = new Date().toISOString();
 
     const newDefect = {
@@ -144,7 +161,6 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     }
 
     // Format BR Date
-    const today = new Date();
     const formattedDate = new Date().toISOString();
 
     // Update defects status
@@ -271,25 +287,25 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center flex-wrap gap-4 headsets-header">
         <h2>Gestão de Headsets</h2>
-        <div className="flex gap-2 headsets-subtabs">
+        <div className="headsets-tab-group">
           <button 
-            className={activeSubTab === 'stock' ? 'primary btn-glow' : ''}
-            onClick={() => setActiveSubTab('stock')}
-            style={activeSubTab !== 'stock' ? {background: 'var(--input-bg)', color: 'var(--text-color)', border: '1px solid var(--border-color)'} : {}}
+            type="button"
+            className={`headsets-tab-btn ${activeSubTab === 'stock' ? 'active' : ''}`}
+            onClick={() => handleSubTabChange('stock')}
           >
             Estoque Funcional
           </button>
           <button 
-            className={activeSubTab === 'defects' ? 'primary btn-glow' : ''}
-            onClick={() => setActiveSubTab('defects')}
-            style={activeSubTab !== 'defects' ? {background: 'var(--input-bg)', color: 'var(--text-color)', border: '1px solid var(--border-color)'} : {}}
+            type="button"
+            className={`headsets-tab-btn ${activeSubTab === 'defects' ? 'active' : ''}`}
+            onClick={() => handleSubTabChange('defects')}
           >
             Caixas e Danificados
           </button>
           <button 
-            className={activeSubTab === 'history' ? 'primary btn-glow' : ''}
-            onClick={() => setActiveSubTab('history')}
-            style={activeSubTab !== 'history' ? {background: 'var(--input-bg)', color: 'var(--text-color)', border: '1px solid var(--border-color)'} : {}}
+            type="button"
+            className={`headsets-tab-btn ${activeSubTab === 'history' ? 'active' : ''}`}
+            onClick={() => handleSubTabChange('history')}
           >
             Histórico de Headsets
           </button>
@@ -309,7 +325,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
               <label>Quantidade</label>
               <input required type="number" min="1" className="premium-input" value={newQuantity} onChange={e => setNewQuantity(e.target.value)} />
             </div>
-            <button type="submit" className="primary btn-glow" style={{height: '42px'}}>Adicionar ao Estoque</button>
+            <button type="submit" className="primary" style={{ height: '38px', padding: '0 18px', fontWeight: 600, borderRadius: 'var(--radius-md)' }}>Adicionar ao Estoque</button>
           </form>
 
           <div className="table-responsive">
@@ -328,12 +344,12 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                   <tr key={s.id}>
                     <td style={{textTransform: 'capitalize'}}>{s.brand}</td>
                     <td>
-                      <span className="badge" style={{fontSize: '1rem'}}>{s.quantity}</span>
+                      <span className="qty-tag font-mono">{s.quantity} un</span>
                     </td>
                     <td>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleUpdateQuantity(s.id, 1)} className="btn-sm" style={{background: 'var(--primary-color)', color: '#fff'}}>+</button>
-                        <button onClick={() => handleUpdateQuantity(s.id, -1)} className="btn-sm" style={{background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-color)'}}>-</button>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleUpdateQuantity(s.id, 1)} className="btn-qty-action" title="Adicionar">+</button>
+                        <button onClick={() => handleUpdateQuantity(s.id, -1)} className="btn-qty-action" title="Diminuir">-</button>
                       </div>
                     </td>
                   </tr>
@@ -346,25 +362,47 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
 
       {activeSubTab === 'defects' && (
         <div className="flex flex-col gap-4">
-          <div className="card">
-            <h3 className="mb-4">Registrar Headset Danificado</h3>
-            <p className="text-sm text-muted mb-4">Ao registrar um defeito, o sistema reduzirá automaticamente 1 unidade do estoque funcional para reposição, a menos que ele tenha vindo direto da operação.</p>
-            
-            <div className="mb-4">
-              <label className="flex items-center gap-2 cursor-pointer" style={{userSelect: 'none', width: 'fit-content', color: 'var(--text-color)'}}>
-                <input 
-                  type="checkbox" 
-                  checked={fromOperation} 
-                  onChange={e => setFromOperation(e.target.checked)} 
-                  style={{width: '16px', height: '16px'}}
-                />
-                Veio direto da Operação (Não descontar do meu estoque funcional)
-              </label>
+          <div className="card defect-register-card">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Registrar Headset com Defeito
+                </h3>
+                <span className="text-muted text-sm">
+                  {fromOperation ? 'Origem: Operação (sem dedução do estoque)' : 'Origem: Troca de posto (deduz 1 do estoque funcional)'}
+                </span>
+              </div>
+
+              {/* Segmented Switch para Seleção de Origem */}
+              <div className="segmented-btn-group">
+                <button
+                  type="button"
+                  className={`segmented-btn ${!fromOperation ? 'active' : ''}`}
+                  onClick={() => setFromOperation(false)}
+                  style={{
+                    background: !fromOperation ? 'var(--primary-color)' : 'transparent',
+                    color: !fromOperation ? '#ffffff' : 'var(--text-muted)'
+                  }}
+                >
+                  📦 Com Reposição (Estoque)
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${fromOperation ? 'active' : ''}`}
+                  onClick={() => setFromOperation(true)}
+                  style={{
+                    background: fromOperation ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
+                    color: fromOperation ? '#fbbf24' : 'var(--text-muted)'
+                  }}
+                >
+                  🏢 Direto da Operação
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleAddDefect} className="flex gap-4 flex-wrap items-end headset-form">
-              <div className="input-group flex-1">
-                <label>Marca / Modelo</label>
+            <form onSubmit={handleAddDefect} className="flex gap-3 flex-wrap items-end headset-form">
+              <div className="input-group flex-1" style={{ minWidth: '180px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Marca / Modelo</label>
                 <input 
                   required 
                   type="text" 
@@ -380,17 +418,18 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                   ))}
                 </datalist>
               </div>
-              <div className="input-group flex-1">
-                <label>Defeito</label>
-                <input required type="text" className="premium-input" placeholder="Ex: mau contato, microfone" value={defectDesc} onChange={e => setDefectDesc(e.target.value)} />
+              <div className="input-group flex-1" style={{ minWidth: '220px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Defeito Relatado</label>
+                <input required type="text" className="premium-input" placeholder="Ex: Microfone mudo, cabo partido" value={defectDesc} onChange={e => setDefectDesc(e.target.value)} />
               </div>
-              <div className="input-group w-32">
-                <label>Caixa</label>
+              <div className="input-group" style={{ width: '130px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Caixa Destino</label>
                 <input required type="text" className="premium-input" placeholder="Ex: N° 06" value={defectBox} onChange={e => setDefectBox(e.target.value)} />
               </div>
-              <div className="input-group">
-                <label>&nbsp;</label>
-                <button type="submit" className="primary btn-glow btn-danger" style={{height: '42px', padding: '0 24px'}}>Registrar Defeito</button>
+              <div>
+                <button type="submit" className="primary" style={{ height: '42px', padding: '0 20px', fontWeight: 700, borderRadius: 'var(--radius-md)' }}>
+                  + Registrar Defeito
+                </button>
               </div>
             </form>
           </div>
@@ -441,14 +480,14 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
               </div>
               <div className="flex gap-2">
                 <button onClick={handleExportCSV} className="btn-sm" style={{border: '1px solid var(--primary-color)', color: 'var(--primary-color)', background: 'transparent'}}>
-                  📥 Exportar Planilha
+                  Exportar Planilha
                 </button>
                 <button 
                   onClick={() => setShowSendModal(true)} 
                   className="btn-sm" 
                   style={{background: 'var(--surface-color)', border: '1px solid #f59e0b', color: '#f59e0b'}}
                 >
-                  📦 Enviar Caixa
+                  Enviar Caixa
                 </button>
                 <button 
                   onClick={() => setShowReceiveModal(true)} 
@@ -528,7 +567,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                       <td style={{whiteSpace: 'nowrap'}}>{new Date(h.date).toLocaleString('pt-BR')}</td>
                       <td><span className="badge badge-outline">{h.action}</span></td>
                       <td style={{textTransform: 'capitalize'}}><strong>{h.brand}</strong></td>
-                      <td><span className="badge" style={{background: 'var(--text-muted)'}}>{h.qty}</span></td>
+                      <td><span className="qty-tag font-mono">{h.qty || 1} un</span></td>
                       <td className="text-muted">{h.details}</td>
                     </tr>
                   ));

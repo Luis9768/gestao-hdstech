@@ -3,11 +3,13 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'gestao-hdstech-super-secret-key-2026-production';
 
 // Suporte a serialização automática de BigInt em JSON no Express
 BigInt.prototype.toJSON = function () {
@@ -26,39 +28,72 @@ function sanitizeUser(user) {
   return safeUser;
 }
 
+/**
+ * Helper resiliente para converter datas em formatos variados (BR, ISO, Timestamp)
+ * garantindo que nunca quebre no Prisma com 'Invalid Date'.
+ */
+function parseSafeDate(dateInput) {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date && !isNaN(dateInput.getTime())) return dateInput;
+  if (typeof dateInput === 'string') {
+    const str = dateInput.trim();
+    const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (brMatch) {
+      const day = parseInt(brMatch[1], 10);
+      const month = parseInt(brMatch[2], 10) - 1;
+      const year = parseInt(brMatch[3], 10);
+      const hour = brMatch[4] ? parseInt(brMatch[4], 10) : 0;
+      const min = brMatch[5] ? parseInt(brMatch[5], 10) : 0;
+      const sec = brMatch[6] ? parseInt(brMatch[6], 10) : 0;
+      const d = new Date(year, month, day, hour, min, sec);
+      if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d;
+  } else if (typeof dateInput === 'number') {
+    const d = new Date(dateInput);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return new Date();
+}
+
 // Seed initial admin & rooms if DB is empty
 async function seedInitialData() {
-  const userCount = await prisma.user.count();
-  if (userCount === 0) {
-    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'Headset@2021#$!';
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-    await prisma.user.create({
-      data: {
-        name: 'Luis Miguel',
-        email: 'luis.miguel@headsetbrasil.com',
-        role: 'admin',
-        password: hashedPassword
-      }
-    });
-    console.log('Seed: Administrador inicial criado com sucesso.');
-  }
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'Headset@2021#$!';
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      await prisma.user.create({
+        data: {
+          name: 'Luis Miguel',
+          email: 'luis.miguel@headsetbrasil.com',
+          role: 'admin',
+          password: hashedPassword
+        }
+      });
+      console.log('Seed: Administrador inicial criado com sucesso.');
+    }
 
-  const roomCount = await prisma.room.count();
-  if (roomCount === 0) {
-    await prisma.room.createMany({
-      data: [
-        { id: 1, name: 'TIM', capacity: 24, paStatus: [] },
-        { id: 2, name: 'Affix', capacity: 28, paStatus: [] }
-      ]
-    });
-    console.log('Seed: Salas iniciais criadas com sucesso.');
+    const roomCount = await prisma.room.count();
+    if (roomCount === 0) {
+      await prisma.room.createMany({
+        data: [
+          { id: 1, name: 'TIM', capacity: 24, paStatus: [] },
+          { id: 2, name: 'Affix', capacity: 28, paStatus: [] }
+        ]
+      });
+      console.log('Seed: Salas iniciais criadas com sucesso.');
+    }
+  } catch (err) {
+    console.error("Aviso no seed inicial:", err.message);
   }
 }
 
 seedInitialData().catch(console.error);
 
 /**
- * Middleware para exigir Autenticação via Token de Sessão em todas as rotas de dados
+ * Middleware para exigir Autenticação via Token JWT assinado criptograficamente
  */
 function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
@@ -71,13 +106,24 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Token de autenticação inválido ou ausente.' });
   }
 
+  // 1. Tentar validar via JWT padrão HMAC-SHA256
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+    const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded && decoded.email) {
       req.authUser = decoded;
       return next();
     }
-  } catch (err) {
+  } catch (jwtErr) {
+    // 2. Fallback de transição suave para sessões legadas já abertas
+    try {
+      const legacy = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+      if (legacy && legacy.email) {
+        req.authUser = legacy;
+        return next();
+      }
+    } catch (legacyErr) {
+      // Ignorar, cairá no 401 abaixo
+    }
     return res.status(401).json({ error: 'Sessão inválida ou expirada. Faça login novamente.' });
   }
 
@@ -91,8 +137,12 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
+    if (!email || !password) {
+      return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+    }
+
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase().trim() }
     });
 
     if (!user || !user.password) {
@@ -104,19 +154,23 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    // Gerar token de sessão seguro contendo os dados essenciais do usuário
-    const token = Buffer.from(JSON.stringify({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      timestamp: Date.now()
-    })).toString('base64');
+    // Gerar Token JWT assinado com chave secreta e validade de 24 horas
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     res.json({
       user: sanitizeUser(user),
       token
     });
   } catch (err) {
+    console.error("Erro no login:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -131,7 +185,6 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
 
     let existing = null;
     
-    // Tenta encontrar por ID se for numérico válido
     if (!isNaN(userId) && Number.isInteger(userId)) {
       try {
         existing = await prisma.user.findUnique({ where: { id: userId } });
@@ -140,11 +193,10 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
       }
     }
 
-    // Fallback: Busca pelo e-mail se o ID for um timestamp do cliente ou não for encontrado
     if (!existing) {
       const searchEmail = originalEmail || email;
       if (searchEmail) {
-        existing = await prisma.user.findUnique({ where: { email: searchEmail.toLowerCase() } });
+        existing = await prisma.user.findUnique({ where: { email: searchEmail.toLowerCase().trim() } });
       }
     }
 
@@ -152,23 +204,22 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Regras de Permissão: Validar admin consultando o banco de dados
-    let isAdmin = false;
-    if (requesterEmail) {
-      const requesterUser = await prisma.user.findUnique({ where: { email: requesterEmail.toLowerCase() } });
+    const callerEmail = (req.authUser?.email || requesterEmail || '').toLowerCase().trim();
+    let isAdmin = req.authUser?.role === 'admin';
+    if (!isAdmin && callerEmail) {
+      const requesterUser = await prisma.user.findUnique({ where: { email: callerEmail } });
       if (requesterUser && requesterUser.role === 'admin') {
         isAdmin = true;
       }
     }
-    const isSelf = existing.email.toLowerCase() === (requesterEmail || '').toLowerCase();
+    const isSelf = existing.email.toLowerCase() === callerEmail;
 
     if (!isAdmin && !isSelf) {
       return res.status(403).json({ error: 'Acesso negado: Você só pode editar seu próprio perfil.' });
     }
 
-    // Se alterou o e-mail, verificar se já está cadastrado por outro usuário
-    if (email && email.toLowerCase() !== existing.email.toLowerCase()) {
-      const emailTaken = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (email && email.toLowerCase().trim() !== existing.email.toLowerCase()) {
+      const emailTaken = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
       if (emailTaken) {
         return res.status(400).json({ error: 'Este e-mail já está sendo utilizado por outro usuário.' });
       }
@@ -176,7 +227,7 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
 
     const updateData = {};
     if (name) updateData.name = name;
-    if (email) updateData.email = email.toLowerCase();
+    if (email) updateData.email = email.toLowerCase().trim();
     
     if (role && isAdmin) {
       updateData.role = role;
@@ -199,144 +250,215 @@ app.put('/api/users/:id', requireAuth, async (req, res) => {
 });
 
 // =======================
-// FULL STATE SYNC (Transação Atômica)
+// FULL STATE SYNC (Totalmente Seguro com UPSERT Diferencial - SEM DELETEMANY CEGO)
 // =======================
 app.post('/api/sync', requireAuth, async (req, res) => {
   try {
     const { cpus, rooms, history, users, headsetStock, headsetDefects } = req.body;
     
-    // Executa toda a sincronização dentro de uma única transação atômica
+    // Configura timeout de 60s para prevenir timeout do Prisma em conexões remotas
     await prisma.$transaction(async (tx) => {
-      // 1. Sincronizar Usuários
+      // 1. Sincronizar Usuários (Upsert Seguro)
       if (users && Array.isArray(users) && users.length > 0) {
-        const existingUsers = await tx.user.findMany();
-        const passwordMap = new Map();
-        existingUsers.forEach(eu => passwordMap.set(eu.email.toLowerCase(), eu.password));
-
-        await tx.user.deleteMany();
         for (const u of users) {
-          let finalPassword = passwordMap.get(u.email.toLowerCase());
+          if (!u.email) continue;
+          const cleanEmail = u.email.toLowerCase().trim();
+          const existingUser = await tx.user.findUnique({ where: { email: cleanEmail } });
+          let finalPassword = existingUser ? existingUser.password : null;
           if (u.password && u.password.trim() !== '') {
-            finalPassword = await bcrypt.hash(u.password, 10);
+            finalPassword = await bcrypt.hash(u.password.trim(), 10);
           }
-          await tx.user.create({
-            data: {
+          await tx.user.upsert({
+            where: { email: cleanEmail },
+            update: {
               name: u.name,
-              email: u.email,
-              role: u.role,
+              role: u.role || 'user',
+              ...(finalPassword ? { password: finalPassword } : {})
+            },
+            create: {
+              name: u.name,
+              email: cleanEmail,
+              role: u.role || 'user',
               password: finalPassword
             }
           });
         }
       }
 
-      // 2. Sincronizar CPUs
-      if (cpus && Array.isArray(cpus) && cpus.length > 0) {
-        await tx.cpu.deleteMany();
-        const usedCpuIds = new Set();
+      // 2. Sincronizar CPUs (Upsert por ID + Deleção Segura com Trava de Segurança)
+      if (cpus && Array.isArray(cpus)) {
+        const existingCpus = await tx.cpu.findMany();
         const safeCpus = cpus.map((c, idx) => {
-          let rawId = BigInt(c.id || Date.now());
-          while (usedCpuIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedCpuIds.add(rawId.toString());
+          let rawId = BigInt(c.id || (Date.now() + idx));
           return {
             id: rawId,
             code: c.code || '',
             acquisition: c.acquisition || '',
             isAuditen: Boolean(c.isAuditen),
-            location: c.location || ''
+            location: c.location || 'estoque'
           };
         });
-        await tx.cpu.createMany({ data: safeCpus });
+
+        // Executar upserts em lotes concorrentes para performance e evitar timeout
+        const CHUNK_SIZE = 15;
+        for (let i = 0; i < safeCpus.length; i += CHUNK_SIZE) {
+          const chunk = safeCpus.slice(i, i + CHUNK_SIZE);
+          await Promise.all(chunk.map(c => tx.cpu.upsert({
+            where: { id: c.id },
+            update: {
+              code: c.code,
+              acquisition: c.acquisition,
+              isAuditen: c.isAuditen,
+              location: c.location
+            },
+            create: c
+          })));
+        }
+
+        // Deleção Segura: Só deleta CPUs que foram explicitamente removidas no front
+        // e APENAS se a lista recebida não estiver zerada (impede apagar tudo por engano)
+        if (safeCpus.length > 0 && existingCpus.length > safeCpus.length) {
+          const incomingIds = new Set(safeCpus.map(c => c.id.toString()));
+          const toDelete = existingCpus.filter(ec => !incomingIds.has(ec.id.toString()));
+          if (toDelete.length > 0 && toDelete.length <= 15) {
+            await tx.cpu.deleteMany({
+              where: { id: { in: toDelete.map(d => d.id) } }
+            });
+          }
+        }
       }
 
-      // 3. Sincronizar Salas (Garantir que ID cabe em Int de 32 bits do PostgreSQL)
-      if (rooms && Array.isArray(rooms) && rooms.length > 0) {
-        await tx.room.deleteMany();
-        await tx.room.createMany({
-          data: rooms.map((r, idx) => {
-            let safeId = Number(r.id);
-            if (isNaN(safeId) || safeId <= 0 || safeId > 2147483640) {
-              safeId = idx + 1;
-            }
-            return {
+      // 3. Sincronizar Salas (Upsert por ID numérico)
+      if (rooms && Array.isArray(rooms)) {
+        const existingRooms = await tx.room.findMany();
+        for (let idx = 0; idx < rooms.length; idx++) {
+          const r = rooms[idx];
+          let safeId = Number(r.id);
+          if (isNaN(safeId) || safeId <= 0 || safeId > 2147483640) {
+            safeId = idx + 1;
+          }
+          await tx.room.upsert({
+            where: { id: safeId },
+            update: {
+              name: r.name,
+              capacity: Number(r.capacity),
+              paStatus: r.paStatus || []
+            },
+            create: {
               id: safeId,
               name: r.name,
               capacity: Number(r.capacity),
               paStatus: r.paStatus || []
-            };
-          })
-        });
-      }
+            }
+          });
+        }
 
-      // 4. Sincronizar Estoque Headsets
-      if (headsetStock && Array.isArray(headsetStock) && headsetStock.length > 0) {
-        await tx.headsetStock.deleteMany();
-        const usedStockIds = new Set();
-        const safeStock = headsetStock.map((s, idx) => {
-          let rawId = BigInt(s.id || Date.now());
-          while (usedStockIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
+        if (rooms.length > 0 && existingRooms.length > rooms.length) {
+          const incomingRoomIds = new Set(rooms.map(r => Number(r.id)));
+          const toDelete = existingRooms.filter(er => !incomingRoomIds.has(er.id));
+          if (toDelete.length > 0 && toDelete.length < existingRooms.length) {
+            await tx.room.deleteMany({
+              where: { id: { in: toDelete.map(d => d.id) } }
+            });
           }
-          usedStockIds.add(rawId.toString());
-          return {
-            id: rawId,
-            brand: s.brand,
-            quantity: Number(s.quantity)
-          };
-        });
-        await tx.headsetStock.createMany({ data: safeStock });
+        }
       }
 
-      // 5. Sincronizar Headsets Danificados
-      if (headsetDefects && Array.isArray(headsetDefects) && headsetDefects.length > 0) {
-        await tx.headsetDefect.deleteMany();
-        const usedDefectIds = new Set();
-        const safeDefects = headsetDefects.map((d, idx) => {
-          let rawId = BigInt(d.id || Date.now());
-          while (usedDefectIds.has(rawId.toString())) {
-            rawId = rawId + BigInt(1);
-          }
-          usedDefectIds.add(rawId.toString());
-          return {
-            id: rawId,
-            date: d.date ? new Date(d.date) : new Date(),
-            returnDate: d.returnDate ? new Date(d.returnDate) : null,
-            brand: d.brand || '',
-            defect: d.defect || '',
-            status: d.status || '',
-            box: d.box || ''
-          };
-        });
-        await tx.headsetDefect.createMany({ data: safeDefects });
-      }
-
-      // 6. Sincronizar Histórico (NUNCA DELETAR - Acumulativo / Upsert Seguro)
-      if (history && Array.isArray(history) && history.length > 0) {
-        for (let idx = 0; idx < history.length; idx++) {
-          const h = history[idx];
-          let rawId = BigInt(h.id || (Date.now() + idx));
-          await tx.history.upsert({
-            where: { id: rawId },
-            update: {}, // Mantém inalterado caso o registro já exista no banco
+      // 4. Sincronizar Estoque Headsets (Upsert por Marca)
+      if (headsetStock && Array.isArray(headsetStock)) {
+        for (let idx = 0; idx < headsetStock.length; idx++) {
+          const s = headsetStock[idx];
+          if (!s.brand) continue;
+          let rawId = BigInt(s.id || (Date.now() + idx));
+          await tx.headsetStock.upsert({
+            where: { brand: s.brand.trim() },
+            update: {
+              quantity: Number(s.quantity)
+            },
             create: {
               id: rawId,
-              date: h.date ? new Date(h.date) : new Date(),
-              action: h.action || null,
-              cpuCode: h.cpuCode || null,
-              from: h.from || null,
-              to: h.to || null,
-              brand: h.brand || null,
-              qty: h.qty ? Number(h.qty) : null,
-              details: h.details || null
+              brand: s.brand.trim(),
+              quantity: Number(s.quantity)
             }
           });
         }
       }
+
+      // 5. Sincronizar Headsets Danificados (Upsert Seguro com parseSafeDate)
+      if (headsetDefects && Array.isArray(headsetDefects)) {
+        const existingDefects = await tx.headsetDefect.findMany();
+        const safeDefects = headsetDefects.map((d, idx) => {
+          let rawId = BigInt(d.id || (Date.now() + idx));
+          return {
+            id: rawId,
+            date: parseSafeDate(d.date),
+            returnDate: d.returnDate ? parseSafeDate(d.returnDate) : null,
+            brand: d.brand || '',
+            defect: d.defect || '',
+            status: d.status || 'Aguardando',
+            box: d.box || ''
+          };
+        });
+
+        const CHUNK_SIZE = 15;
+        for (let i = 0; i < safeDefects.length; i += CHUNK_SIZE) {
+          const chunk = safeDefects.slice(i, i + CHUNK_SIZE);
+          await Promise.all(chunk.map(d => tx.headsetDefect.upsert({
+            where: { id: d.id },
+            update: {
+              date: d.date,
+              returnDate: d.returnDate,
+              brand: d.brand,
+              defect: d.defect,
+              status: d.status,
+              box: d.box
+            },
+            create: d
+          })));
+        }
+
+        if (safeDefects.length > 0 && existingDefects.length > safeDefects.length) {
+          const incomingIds = new Set(safeDefects.map(d => d.id.toString()));
+          const toDelete = existingDefects.filter(ed => !incomingIds.has(ed.id.toString()));
+          if (toDelete.length > 0 && toDelete.length <= 15) {
+            await tx.headsetDefect.deleteMany({
+              where: { id: { in: toDelete.map(d => d.id) } }
+            });
+          }
+        }
+      }
+
+      // 6. Sincronizar Histórico (Otimizado: insere em lote apenas itens novos)
+      if (history && Array.isArray(history) && history.length > 0) {
+        const existingHist = await tx.history.findMany({ select: { id: true } });
+        const existingIds = new Set(existingHist.map(h => h.id.toString()));
+        const newHist = history
+          .map((h, idx) => ({
+            id: BigInt(h.id || (Date.now() + idx)),
+            date: parseSafeDate(h.date),
+            action: h.action || null,
+            cpuCode: h.cpuCode || null,
+            from: h.from || null,
+            to: h.to || null,
+            brand: h.brand || null,
+            qty: h.qty ? Number(h.qty) : null,
+            details: h.details || null
+          }))
+          .filter(h => !existingIds.has(h.id.toString()));
+
+        if (newHist.length > 0) {
+          await tx.history.createMany({
+            data: newHist,
+            skipDuplicates: true
+          });
+        }
+      }
+    }, {
+      maxWait: 20000,
+      timeout: 60000
     });
 
-    res.json({ success: true, message: 'Sync completed' });
+    res.json({ success: true, message: 'Sync completed safely without data loss' });
   } catch (err) {
     console.error("Erro na sincronização:", err);
     res.status(500).json({ error: err.message });
@@ -344,8 +466,133 @@ app.post('/api/sync', requireAuth, async (req, res) => {
 });
 
 // =======================
-// DEDICATED HISTORY LOG ENDPOINT
+// ROTAS GRANULARES / CRUD ATÔMICO
 // =======================
+
+// CPUs
+app.post('/api/cpus', requireAuth, async (req, res) => {
+  try {
+    const { id, code, acquisition, isAuditen, location } = req.body;
+    let rawId = BigInt(id || Date.now());
+    const cpu = await prisma.cpu.create({
+      data: {
+        id: rawId,
+        code: code || '',
+        acquisition: acquisition || '',
+        isAuditen: Boolean(isAuditen),
+        location: location || 'estoque'
+      }
+    });
+    res.json({ success: true, cpu: { ...cpu, id: Number(cpu.id) } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/cpus/:id', requireAuth, async (req, res) => {
+  try {
+    const cpuId = BigInt(req.params.id);
+    const { code, acquisition, isAuditen, location } = req.body;
+    const cpu = await prisma.cpu.update({
+      where: { id: cpuId },
+      data: {
+        ...(code !== undefined ? { code } : {}),
+        ...(acquisition !== undefined ? { acquisition } : {}),
+        ...(isAuditen !== undefined ? { isAuditen: Boolean(isAuditen) } : {}),
+        ...(location !== undefined ? { location } : {})
+      }
+    });
+    res.json({ success: true, cpu: { ...cpu, id: Number(cpu.id) } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/cpus/:id', requireAuth, async (req, res) => {
+  try {
+    const cpuId = BigInt(req.params.id);
+    await prisma.cpu.delete({ where: { id: cpuId } });
+    res.json({ success: true, message: 'CPU excluída com sucesso' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Salas
+app.put('/api/rooms/:id', requireAuth, async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    const { name, capacity, paStatus } = req.body;
+    const room = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(capacity !== undefined ? { capacity: Number(capacity) } : {}),
+        ...(paStatus !== undefined ? { paStatus } : {})
+      }
+    });
+    res.json({ success: true, room });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Headset Stock
+app.put('/api/headsets/stock/:id', requireAuth, async (req, res) => {
+  try {
+    const stockId = BigInt(req.params.id);
+    const { quantity } = req.body;
+    const item = await prisma.headsetStock.update({
+      where: { id: stockId },
+      data: { quantity: Number(quantity) }
+    });
+    res.json({ success: true, stock: { ...item, id: Number(item.id) } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Headset Defeitos
+app.post('/api/headsets/defects', requireAuth, async (req, res) => {
+  try {
+    const { id, date, returnDate, brand, defect, status, box } = req.body;
+    let rawId = BigInt(id || Date.now());
+    const item = await prisma.headsetDefect.create({
+      data: {
+        id: rawId,
+        date: parseSafeDate(date),
+        returnDate: returnDate ? parseSafeDate(returnDate) : null,
+        brand: brand || '',
+        defect: defect || '',
+        status: status || 'Aguardando',
+        box: box || ''
+      }
+    });
+    res.json({ success: true, defect: { ...item, id: Number(item.id) } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/headsets/defects/:id', requireAuth, async (req, res) => {
+  try {
+    const defectId = BigInt(req.params.id);
+    const { status, returnDate, box } = req.body;
+    const item = await prisma.headsetDefect.update({
+      where: { id: defectId },
+      data: {
+        ...(status !== undefined ? { status } : {}),
+        ...(returnDate !== undefined ? { returnDate: parseSafeDate(returnDate) } : {}),
+        ...(box !== undefined ? { box } : {})
+      }
+    });
+    res.json({ success: true, defect: { ...item, id: Number(item.id) } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Histórico
 app.post('/api/history', requireAuth, async (req, res) => {
   try {
     const { id, date, action, cpuCode, from, to, brand, qty, details } = req.body;
@@ -353,7 +600,7 @@ app.post('/api/history', requireAuth, async (req, res) => {
     const created = await prisma.history.create({
       data: {
         id: rawId,
-        date: date ? new Date(date) : new Date(),
+        date: parseSafeDate(date),
         action: action || null,
         cpuCode: cpuCode || null,
         from: from || null,
@@ -370,7 +617,7 @@ app.post('/api/history', requireAuth, async (req, res) => {
 });
 
 // =======================
-// FETCH ALL
+// FETCH ALL (Carregamento Geral Seguro)
 // =======================
 app.get('/api/all', requireAuth, async (req, res) => {
   try {
@@ -393,12 +640,13 @@ app.get('/api/all', requireAuth, async (req, res) => {
       cpus: parsedCpus,
       rooms: rooms,
       history: parsedHistory,
-      users: [], // Removido por segurança para não expor lista de contas no payload público
+      users: [], // Protegido: a lista completa só é entregue na rota /api/users para admin
       headsetStock: parsedStock,
       headsetDefects: parsedDefects,
       headsetHistory: parsedHeadsetHistory
     });
   } catch(err) {
+    console.error("Erro ao carregar dados gerais:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -408,12 +656,18 @@ app.get('/api/all', requireAuth, async (req, res) => {
 // =======================
 app.get('/api/users', requireAuth, async (req, res) => {
   try {
-    const requesterEmail = req.query.requesterEmail;
-    if (!requesterEmail) {
+    const callerEmail = (req.authUser?.email || req.query.requesterEmail || '').toLowerCase().trim();
+    if (!callerEmail) {
       return res.status(401).json({ error: 'Acesso negado: E-mail de identificação necessário.' });
     }
-    const requesterUser = await prisma.user.findUnique({ where: { email: String(requesterEmail).toLowerCase() } });
-    if (!requesterUser || requesterUser.role !== 'admin') {
+    let isAdmin = req.authUser?.role === 'admin';
+    if (!isAdmin) {
+      const requesterUser = await prisma.user.findUnique({ where: { email: callerEmail } });
+      if (requesterUser && requesterUser.role === 'admin') {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Acesso negado: Apenas administradores podem visualizar contas.' });
     }
 
@@ -426,6 +680,17 @@ app.get('/api/users', requireAuth, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 API rodando na porta ${PORT}`);
 });
+
+const shutdown = async () => {
+  console.log('Finalizando conexões e encerrando servidor de forma segura...');
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

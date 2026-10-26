@@ -14,6 +14,8 @@ dist-ssr
 .env
 .env.*
 release/
+backup_*.json
+*.backup.json
 
 # Editor directories and files
 .vscode/*

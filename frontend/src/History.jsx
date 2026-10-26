@@ -8,7 +8,7 @@ const formatDate = (dateVal) => {
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return String(dateVal);
     return d.toLocaleString('pt-BR');
-  } catch (e) {
+  } catch {
     return String(dateVal);
   }
 };

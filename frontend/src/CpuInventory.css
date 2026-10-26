@@ -1,7 +1,7 @@
 .cpu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
 }
 
 .card {
@@ -21,40 +21,189 @@
   outline: none;
 }
 
-.cpu-item {
-  padding: 1rem;
-  border: 1px solid var(--border-color);
+/* ==========================================================================
+ * Minimalist CPU Inventory Card (Editorial & Clean)
+ * ========================================================================== */
+.cpu-inventory-card {
+  background: #0f0e13;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
-  margin-bottom: 0.5rem;
-  background-color: var(--bg-color);
-  transition: var(--transition);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.16s ease;
 }
 
-.acq-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-left: 10px;
+.cpu-inventory-card:hover {
+  background: #14131a;
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
-.acq-tim { background-color: #dbeafe; color: #1e40af; }
-.acq-affix { background-color: #fce7f3; color: #9d174d; }
+.cpu-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
-[data-theme='dark'] .acq-tim { background-color: #1e3a8a; color: #bfdbfe; }
-[data-theme='dark'] .acq-affix { background-color: #831843; color: #fbcfe8; }
+.cpu-card-code {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
 
-.location-badge {
+.cpu-card-code.unidentified {
+  font-family: var(--font-sans);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: #fbbf24;
+  letter-spacing: normal;
 }
 
-.btn-danger {
-  background-color: #ef4444;
-  color: white;
+/* Desaturated & Clean Pertence Badge */
+.cpu-acq-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
   border-radius: 4px;
-  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cpu-acq-pill.acq-affix {
+  background: rgba(244, 63, 94, 0.08);
+  color: #fda4af;
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.cpu-acq-pill.acq-tim {
+  background: rgba(59, 130, 246, 0.08);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.cpu-acq-pill.acq-baby {
+  background: rgba(168, 85, 247, 0.08);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+/* Metadata Row (Location & Auditen Status) */
+.cpu-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #71717a;
+}
+
+.audit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.audit-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.audit-badge.auditen-active {
+  color: #86efac;
+}
+
+.audit-badge.auditen-active .audit-dot {
+  background-color: #22c55e;
+}
+
+.audit-badge.auditen-inactive {
+  color: #71717a;
+}
+
+.audit-badge.auditen-inactive .audit-dot {
+  background-color: #52525b;
+}
+
+.cpu-meta-sep {
+  color: #3f3f46;
+  font-size: 0.65rem;
+}
+
+.cpu-location-text {
+  color: #a1a1aa;
+  font-weight: 500;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Non-Aggressive Action Buttons */
+.cpu-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cpu-btn-edit {
+  flex: 1;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #d4d4d8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cpu-btn-edit:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.cpu-btn-delete {
+  flex: 1;
+  height: 30px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #71717a;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cpu-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 /* Responsividade Mobile para Estoque de CPUs */
