@@ -121,7 +121,7 @@ export default function Settings({ cpus, rooms, history, usersList, headsetStock
       
       <div className="flex gap-6 flex-wrap">
         {/* Connection Status */}
-        <div className="glass-card flex-1" style={{minWidth: '350px'}}>
+        <div className="glass-card flex-1" style={{minWidth: '280px'}}>
           <h3 className="mb-4">Conexão e Nuvem</h3>
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4" style={{padding: '16px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '12px'}}>
@@ -146,7 +146,7 @@ export default function Settings({ cpus, rooms, history, usersList, headsetStock
         </div>
 
         {/* Master Backup */}
-        <div className="glass-card flex-1" style={{minWidth: '350px'}}>
+        <div className="glass-card flex-1" style={{minWidth: '280px'}}>
           <h3 className="mb-4">Backup Mestre (Exportação)</h3>
           <p className="text-muted mb-6">
             Gere uma planilha Excel completa contendo <strong>todas as informações</strong> do sistema divididas por abas (CPUs, Salas, Headsets, Histórico de Movimentações, etc.).

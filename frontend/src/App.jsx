@@ -98,6 +98,19 @@ const NavIcons = {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ flexShrink: 0 }}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
+  ),
+  Menu: ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="18" y2="18" />
+    </svg>
+  ),
+  Close: ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
   )
 };
 
@@ -577,6 +590,15 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Backdrop Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setIsMobileMenuOpen(false)} 
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar estilo shadcn / print anexado */}
       <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         {/* Brand Header */}
@@ -585,6 +607,14 @@ function App() {
             <img src={hdstecLogo} alt="HDSTEC" className="sidebar-brand-logo-img" />
             <span className="sidebar-brand-subtitle">Gestão TI</span>
           </div>
+          <button 
+            type="button" 
+            className="sidebar-mobile-close" 
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Fechar menu"
+          >
+            <NavIcons.Close size={18} />
+          </button>
         </div>
 
         {/* Indicador de Salvamento Ativo */}
@@ -681,13 +711,28 @@ function App() {
       <div className="main-wrapper">
         {/* Top Header Bar (Breadcrumbs e Controles Globais) */}
         <header className="top-nav-bar">
-          <div className="breadcrumb-trail">
-            <span>HDSTEC</span>
-            <span className="breadcrumb-sep">/</span>
-            <span className="active">{getBreadcrumbTitle()}</span>
+          <div className="top-nav-left">
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setIsMobileMenuOpen(prev => !prev)}
+              aria-label="Abrir menu de navegação"
+            >
+              <NavIcons.Menu size={18} />
+            </button>
+            <div className="breadcrumb-trail">
+              <span>HDSTEC</span>
+              <span className="breadcrumb-sep">/</span>
+              <span className="active">{getBreadcrumbTitle()}</span>
+            </div>
           </div>
 
-          </header>
+          <div className="top-nav-right">
+            <div className="top-user-badge-mobile" title={user?.name || user?.email}>
+              <div className="user-avatar-circle small">{userInitials}</div>
+            </div>
+          </div>
+        </header>
 
         {/* Main Content Viewport */}
         <main className="main-content">

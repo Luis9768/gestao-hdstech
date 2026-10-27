@@ -66,12 +66,12 @@ export default function History({ history, setHistory, updateData }) {
 
   return (
     <div className="history-manager">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-3 history-header">
         <div>
           <h2>Histórico de Movimentações</h2>
           <p className="text-muted">Veja o registro de todas as alterações de localidade das CPUs.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap history-actions">
           <label className="primary badge cursor-pointer" style={{padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', margin: 0}}>
             Importar Excel
             <input 
@@ -88,34 +88,36 @@ export default function History({ history, setHistory, updateData }) {
       </div>
       
       <div className="card">
-        <table className="history-table w-full">
-          <thead>
-            <tr>
-              <th>Data/Hora</th>
-              <th>CPU</th>
-              <th>Origem</th>
-              <th>Destino</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cpuHistory.length > 0 ? (
-              cpuHistory.map(entry => (
-                <tr key={entry.id}>
-                  <td style={{whiteSpace: 'nowrap'}}>{formatDate(entry.date)}</td>
-                  <td><strong>{entry.cpuCode || '-'}</strong></td>
-                  <td><span className="badge badge-outline">{entry.from || '-'}</span></td>
-                  <td><span className="badge badge-outline">{entry.to || '-'}</span></td>
-                </tr>
-              ))
-            ) : (
+        <div className="table-responsive">
+          <table className="history-table w-full">
+            <thead>
               <tr>
-                <td colSpan="4" className="text-center text-muted" style={{padding: '2rem'}}>
-                  Nenhuma movimentação registrada ainda.
-                </td>
+                <th>Data/Hora</th>
+                <th>CPU</th>
+                <th>Origem</th>
+                <th>Destino</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {cpuHistory.length > 0 ? (
+                cpuHistory.map(entry => (
+                  <tr key={entry.id}>
+                    <td style={{whiteSpace: 'nowrap'}}>{formatDate(entry.date)}</td>
+                    <td><strong>{entry.cpuCode || '-'}</strong></td>
+                    <td><span className="badge badge-outline">{entry.from || '-'}</span></td>
+                    <td><span className="badge badge-outline">{entry.to || '-'}</span></td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center text-muted" style={{padding: '2rem'}}>
+                    Nenhuma movimentação registrada ainda.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

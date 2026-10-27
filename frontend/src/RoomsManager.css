@@ -595,3 +595,134 @@
   transform: translateY(-2px);
   box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
 }
+
+/* ==========================================================================
+ * Responsive Design (Mobile & Tablet Optimization)
+ * ========================================================================== */
+@media (max-width: 1024px) {
+  .room-view {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .room-buttons-scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .room-buttons-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .room-tab-btn {
+    flex-shrink: 0;
+  }
+
+  .room-view {
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .room-toolbar-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .room-title-area {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .room-action-toolbars {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .segmented-btn-group {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .segmented-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+
+  .room-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .room-filter-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .room-filter-pill {
+    flex: 1;
+    text-align: center;
+  }
+
+  .room-search-input-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pa-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.65rem;
+  }
+
+  .swap-preview-box {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .swap-arrow-icon {
+    transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .room-view {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .room-name-text {
+    font-size: 1.15rem;
+  }
+
+  .room-meta-pill {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+  }
+
+  .pa-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .pa-slot {
+    min-height: 94px;
+    padding: 8px 10px;
+  }
+
+  .pa-code-num {
+    font-size: 0.85rem !important;
+  }
+
+  .pa-tag {
+    font-size: 0.62rem !important;
+    padding: 1px 5px !important;
+  }
+}

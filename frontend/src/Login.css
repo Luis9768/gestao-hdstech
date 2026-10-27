@@ -110,3 +110,17 @@
   text-align: center;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
+
+@media (max-width: 480px) {
+  .glass-card {
+    padding: 1.75rem 1.25rem !important;
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem !important;
+  }
+  .login-title {
+    font-size: 1.6rem !important;
+  }
+  .login-subtitle {
+    margin-bottom: 1.5rem !important;
+  }
+}

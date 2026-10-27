@@ -422,12 +422,12 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Defeito Relatado</label>
                 <input required type="text" className="premium-input" placeholder="Ex: Microfone mudo, cabo partido" value={defectDesc} onChange={e => setDefectDesc(e.target.value)} />
               </div>
-              <div className="input-group" style={{ width: '130px' }}>
+              <div className="input-group headset-input-box" style={{ minWidth: '130px' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Caixa Destino</label>
                 <input required type="text" className="premium-input" placeholder="Ex: N° 06" value={defectBox} onChange={e => setDefectBox(e.target.value)} />
               </div>
-              <div>
-                <button type="submit" className="primary" style={{ height: '42px', padding: '0 20px', fontWeight: 700, borderRadius: 'var(--radius-md)' }}>
+              <div className="headset-btn-wrapper">
+                <button type="submit" className="primary headset-submit-btn" style={{ height: '42px', padding: '0 20px', fontWeight: 700, borderRadius: 'var(--radius-md)' }}>
                   + Registrar Defeito
                 </button>
               </div>
@@ -478,7 +478,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap defect-actions-row">
                 <button onClick={handleExportCSV} className="btn-sm" style={{border: '1px solid var(--primary-color)', color: 'var(--primary-color)', background: 'transparent'}}>
                   Exportar Planilha
                 </button>

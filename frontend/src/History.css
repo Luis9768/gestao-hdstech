@@ -1,6 +1,12 @@
+.history-manager {
+  width: 100%;
+}
+
 .history-table {
   border-collapse: collapse;
   text-align: left;
+  width: 100%;
+  min-width: 500px;
 }
 
 .history-table th {
@@ -8,11 +14,13 @@
   border-bottom: 2px solid var(--border-color);
   color: var(--text-muted);
   font-weight: 500;
+  font-size: 0.82rem;
 }
 
 .history-table td {
   padding: 12px;
   border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
 }
 
 .history-table tr:last-child td {
@@ -26,4 +34,22 @@
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .history-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .history-actions {
+    width: 100% !important;
+  }
+
+  .history-actions label,
+  .history-actions button {
+    flex: 1 1 auto;
+    text-align: center;
+  }
 }
