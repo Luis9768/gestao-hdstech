@@ -365,7 +365,7 @@ export default function HeadsetsManager({ stock, setStock, defects, setDefects, 
           <div className="card defect-register-card">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-color)', margin: 0 }}>
                   Registrar Headset com Defeito
                 </h3>
                 <span className="text-muted text-sm">

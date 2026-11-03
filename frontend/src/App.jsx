@@ -111,6 +111,24 @@ const NavIcons = {
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
     </svg>
+  ),
+  Sun: ({ size = 15, className = '' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  ),
+  Moon: ({ size = 15, className = '' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ flexShrink: 0 }}>
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
   )
 };
 
@@ -299,6 +317,27 @@ function App() {
     }
   }, [activeTab]);
 
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('gestao-cpus-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme;
+      }
+    } catch (e) {
+      console.warn('Falha ao restaurar tema:', e);
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gestao-cpus-theme', theme);
+    } catch (e) {
+      console.warn('Falha ao persistir tema:', e);
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   useEffect(() => {
     if (user && user.role !== 'admin' && (activeTab === 'users' || activeTab === 'settings')) {
       setActiveTab('dashboard');
@@ -307,6 +346,13 @@ function App() {
   const [chartCategory, setChartCategory] = useState('machines') // 'machines' | 'headsets'
   const [chartSubTab, setChartSubTab] = useState('rooms') // if machines: 'rooms' | 'distribution' | 'timeline'. if headsets: 'defects' | 'stock'
   const [chartType, setChartType] = useState('area') // 'area' | 'bar'
+
+  // Variáveis visuais dinâmicas para os gráficos de acordo com o tema ativo
+  const chartGridStroke = theme === 'light' ? 'rgba(0, 0, 0, 0.07)' : 'rgba(255, 255, 255, 0.05)';
+  const chartDotFill = theme === 'light' ? '#ffffff' : '#09090b';
+  const chartBarCapacityFill = theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+  const chartPieStroke = theme === 'light' ? '#ffffff' : '#121217';
+  const chartAxisLineStroke = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.08)';
 
   const applyDataState = (data) => {
     if (!data) return;
@@ -542,7 +588,7 @@ function App() {
       <div className="login-container flex items-center justify-center text-center">
         <div className="glass-card" style={{ padding: '2.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid var(--primary-light)', borderTopColor: 'var(--primary-color)', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem auto' }} />
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>Gestão de CPUs & Headsets</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-color)' }}>Gestão de CPUs & Headsets</h3>
           <p className="text-muted mt-2">Conectando ao banco de dados PostgreSQL...</p>
         </div>
       </div>
@@ -572,7 +618,13 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Login 
+        onLogin={handleLogin} 
+        theme={theme} 
+        onToggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} 
+      />
+    );
   }
 
   const getBreadcrumbTitle = () => {
@@ -701,9 +753,20 @@ function App() {
               <span>{user?.role === 'admin' ? 'Administrador' : 'Operador'}</span>
             </div>
           </div>
-          <button className="logout-icon-btn" onClick={handleLogout} title="Sair do Sistema">
-            ↪
-          </button>
+          <div className="sidebar-footer-actions">
+            <button 
+              type="button"
+              className="sidebar-theme-toggle-btn" 
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} 
+              title={theme === 'light' ? "Mudar para Modo Escuro" : "Mudar para Modo Claro"}
+              aria-label="Alternar tema claro ou escuro"
+            >
+              {theme === 'light' ? <NavIcons.Moon size={15} /> : <NavIcons.Sun size={15} />}
+            </button>
+            <button className="logout-icon-btn" onClick={handleLogout} title="Sair do Sistema">
+              ↪
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -728,6 +791,27 @@ function App() {
           </div>
 
           <div className="top-nav-right">
+            {/* Botão de Alternar Modo Claro / Modo Escuro */}
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+              title={theme === 'light' ? "Alternar para Modo Escuro" : "Alternar para Modo Claro"}
+              aria-label="Alternar tema claro ou escuro"
+            >
+              {theme === 'light' ? (
+                <>
+                  <NavIcons.Moon size={15} />
+                  <span className="theme-toggle-label">Modo Escuro</span>
+                </>
+              ) : (
+                <>
+                  <NavIcons.Sun size={15} />
+                  <span className="theme-toggle-label">Modo Claro</span>
+                </>
+              )}
+            </button>
+
             <div className="top-user-badge-mobile" title={user?.name || user?.email}>
               <div className="user-avatar-circle small">{userInitials}</div>
             </div>
@@ -881,7 +965,7 @@ function App() {
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -895,7 +979,7 @@ function App() {
                               fill="url(#colorCapacity)" 
                               isAnimationActive={true}
                               animationDuration={1400}
-                              dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: chartDotFill }}
                             />
                             <Area 
                               type="monotone" 
@@ -907,7 +991,7 @@ function App() {
                               fill="url(#colorOccupied)" 
                               isAnimationActive={true}
                               animationDuration={1500}
-                              dot={{ r: 5, stroke: '#7c3aed', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 5, stroke: '#7c3aed', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 8, stroke: '#ffffff', strokeWidth: 3, fill: '#7c3aed' }}
                             />
                           </AreaChart>
@@ -915,12 +999,12 @@ function App() {
                       ) : (
                         <ResponsiveContainer width="100%" height={320}>
                           <BarChart data={roomsChartData} margin={{ top: 20, right: 15, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
                             <Bar dataKey="ocupadas" fill="#7c3aed" radius={[6, 6, 0, 0]} name="PAs Ocupadas" isAnimationActive={true} animationDuration={1200} />
-                            <Bar dataKey="capacidade" fill="rgba(255, 255, 255, 0.12)" radius={[6, 6, 0, 0]} name="Capacidade Total" isAnimationActive={true} animationDuration={1200} />
+                            <Bar dataKey="capacidade" fill={chartBarCapacityFill} radius={[6, 6, 0, 0]} name="Capacidade Total" isAnimationActive={true} animationDuration={1200} />
                           </BarChart>
                         </ResponsiveContainer>
                       )
@@ -940,10 +1024,10 @@ function App() {
                               isAnimationActive={true}
                               animationDuration={1200}
                             >
-                              <Cell fill="#7c3aed" stroke="#121217" strokeWidth={3} />
-                              <Cell fill="#22c55e" stroke="#121217" strokeWidth={3} />
+                              <Cell fill="#7c3aed" stroke={chartPieStroke} strokeWidth={3} />
+                              <Cell fill="#22c55e" stroke={chartPieStroke} strokeWidth={3} />
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: '8px', color: '#ffffff' }} itemStyle={{ color: '#ffffff' }} />
+                            <Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: '8px', color: 'var(--text-color)' }} itemStyle={{ color: 'var(--text-color)' }} />
                             <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '10px' }} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -965,7 +1049,7 @@ function App() {
                                 <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -980,7 +1064,7 @@ function App() {
                               isAnimationActive={true}
                               animationDuration={1500}
                               animationEasing="ease-in-out"
-                              dot={{ r: 5, stroke: '#7c3aed', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 5, stroke: '#7c3aed', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 8, stroke: '#ffffff', strokeWidth: 3, fill: '#7c3aed' }}
                             />
                           </AreaChart>
@@ -988,7 +1072,7 @@ function App() {
                       ) : (
                         <ResponsiveContainer width="100%" height={320}>
                           <BarChart data={timelineTrendData} margin={{ top: 20, right: 15, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -1017,13 +1101,13 @@ function App() {
                                 <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis 
                               dataKey="brand" 
                               stroke="var(--text-muted)" 
                               fontSize={12} 
                               tickLine={false} 
-                              axisLine={{ stroke: 'rgba(255, 255, 255, 0.08)' }} 
+                              axisLine={{ stroke: chartAxisLineStroke }} 
                             />
                             <YAxis 
                               stroke="var(--text-muted)" 
@@ -1043,7 +1127,7 @@ function App() {
                               isAnimationActive={true}
                               animationDuration={1500}
                               animationEasing="ease-in-out"
-                              dot={{ r: 4, stroke: '#8b5cf6', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 4, stroke: '#8b5cf6', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 2, fill: '#8b5cf6' }}
                             />
                             <Area 
@@ -1057,7 +1141,7 @@ function App() {
                               isAnimationActive={true}
                               animationDuration={1500}
                               animationEasing="ease-in-out"
-                              dot={{ r: 4, stroke: '#f59e0b', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 4, stroke: '#f59e0b', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 2, fill: '#f59e0b' }}
                             />
                             <Area 
@@ -1071,7 +1155,7 @@ function App() {
                               isAnimationActive={true}
                               animationDuration={1500}
                               animationEasing="ease-in-out"
-                              dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 2, fill: '#10b981' }}
                             />
                           </AreaChart>
@@ -1079,7 +1163,7 @@ function App() {
                       ) : (
                         <ResponsiveContainer width="100%" height={320}>
                           <BarChart data={headsetBrandData} margin={{ top: 20, right: 15, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="brand" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -1101,7 +1185,7 @@ function App() {
                                 <stop offset="95%" stopColor="#22c55e" stopOpacity={0.0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="brand" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -1115,7 +1199,7 @@ function App() {
                               fill="url(#colorStockGreen)" 
                               isAnimationActive={true}
                               animationDuration={1500}
-                              dot={{ r: 5, stroke: '#22c55e', strokeWidth: 2, fill: '#09090b' }}
+                              dot={{ r: 5, stroke: '#22c55e', strokeWidth: 2, fill: chartDotFill }}
                               activeDot={{ r: 8, stroke: '#ffffff', strokeWidth: 3, fill: '#22c55e' }}
                             />
                           </AreaChart>
@@ -1123,7 +1207,7 @@ function App() {
                       ) : (
                         <ResponsiveContainer width="100%" height={320}>
                           <BarChart data={headsetStockData} margin={{ top: 20, right: 15, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                             <XAxis dataKey="brand" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip content={<CustomChartTooltip />} />
@@ -1188,7 +1272,7 @@ function App() {
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <NavIcons.History size={16} />
-                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Atividades Recentes</h3>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Atividades Recentes</h3>
                     </div>
                     <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary-text)', fontWeight: 700 }}>
                       {history.length} eventos
@@ -1200,7 +1284,7 @@ function App() {
                       <div 
                         key={item.id || idx}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
+                          background: 'var(--bg-canvas-subtle)',
                           border: '1px solid var(--border-color)',
                           borderRadius: 'var(--radius-md)',
                           padding: '10px 12px',
@@ -1217,7 +1301,7 @@ function App() {
                             {item.date ? new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                           </span>
                         </div>
-                        <strong style={{ fontSize: '0.85rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                        <strong style={{ fontSize: '0.85rem', color: 'var(--text-color)', fontFamily: 'var(--font-mono)' }}>
                           {item.cpuCode || 'Equipamento'}
                         </strong>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>

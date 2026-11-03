@@ -678,7 +678,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       {/* Top Header com Tabs das Salas */}
       <div className="flex justify-between items-center flex-wrap gap-4 rooms-header">
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.3px' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-color)', letterSpacing: '-0.3px' }}>
             Gestão de Salas & Posições
           </h2>
           <p className="text-muted text-sm">Monitore a ocupação e movimente máquinas livremente entre as PAs.</p>
@@ -711,7 +711,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       {/* Formulário para Adicionar Nova Sala */}
       {isAddingRoom && (
         <div className="card mb-4" style={{ border: '1px solid var(--border-active)' }}>
-          <h3 className="mb-4" style={{ fontSize: '1.1rem', color: '#ffffff' }}>Adicionar Nova Sala</h3>
+          <h3 className="mb-4" style={{ fontSize: '1.1rem', color: 'var(--text-color)' }}>Adicionar Nova Sala</h3>
           <form onSubmit={handleAddRoom} className="flex gap-4 flex-wrap items-end">
             <div className="input-group" style={{ flex: 2, minWidth: '220px' }}>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
@@ -1105,7 +1105,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       <div className="card mt-2">
         <div className="flex justify-between items-center mb-2">
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>CPUs Disponíveis no Estoque</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>CPUs Disponíveis no Estoque</h3>
             <p className="text-muted text-sm">Arraste uma máquina para alocar ou substituir em uma PA.</p>
           </div>
           <span style={{ fontSize: '0.8rem', padding: '4px 10px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary-text)', fontWeight: 700 }}>
@@ -1152,7 +1152,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       {swapModalData && (
         <div className="modal-overlay" onClick={() => setSwapModalData(null)}>
           <div className="modal-content-card" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Trocar Posições
             </h3>
 
@@ -1184,7 +1184,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       {pertenceModalData && (
         <div className="modal-overlay" onClick={() => setPertenceModalData(null)}>
           <div className="modal-content-card" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Definir Pertence
             </h3>
             <p className="text-muted text-sm mb-4">
@@ -1221,7 +1221,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
       {replaceModalData && (
         <div className="modal-overlay" onClick={() => setReplaceModalData(null)}>
           <div className="modal-content-card" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Substituir CPU na PA
             </h3>
 
@@ -1254,7 +1254,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
         <div className="modal-overlay" onClick={() => setViewingCpuModal(null)}>
           <div className="modal-content-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="flex justify-between items-center mb-4">
-              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#ffffff' }}>Detalhes do Equipamento</h3>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-color)' }}>Detalhes do Equipamento</h3>
               <button 
                 onClick={() => setViewingCpuModal(null)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem' }}
@@ -1266,7 +1266,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
             <div className="flex flex-col gap-3 mb-6">
               <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <span className="text-muted text-sm" style={{ display: 'block', marginBottom: '2px' }}>Código da CPU</span>
-                <strong style={{ fontSize: '1.15rem', fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
+                <strong style={{ fontSize: '1.15rem', fontFamily: 'var(--font-mono)', color: 'var(--text-color)' }}>
                   {viewingCpuModal.cpu.code}
                 </strong>
               </div>

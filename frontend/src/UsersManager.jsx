@@ -170,7 +170,6 @@ export default function UsersManager({ usersList, setUsersList, updateData, curr
                         {canDelete && (
                           <button 
                             className="btn-sm btn-danger" 
-                            style={{background: '#ef4444', color: '#fff'}} 
                             onClick={() => handleDelete(u.id)}
                           >
                             Remover

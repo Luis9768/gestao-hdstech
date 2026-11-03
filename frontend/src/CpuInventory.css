@@ -240,3 +240,42 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ==========================================================================
+ * Light Theme Specific Overrides for CPU Inventory
+ * ========================================================================== */
+[data-theme='light'] .cpu-inventory-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .cpu-inventory-card:hover {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .cpu-card-code {
+  color: var(--text-color);
+}
+
+[data-theme='light'] .cpu-acq-pill {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #f1f5f9;
+  color: #475569;
+}
+
+[data-theme='light'] .cpu-details-box {
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .cpu-detail-row {
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .cpu-detail-value {
+  color: var(--text-color);
+}
+

@@ -53,3 +53,18 @@
     text-align: center;
   }
 }
+
+/* Light Theme Overrides for History */
+[data-theme='light'] .history-table th {
+  border-bottom-color: rgba(0, 0, 0, 0.12);
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .history-table td {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .history-table tr:hover td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
