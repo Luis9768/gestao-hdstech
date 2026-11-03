@@ -179,6 +179,7 @@ body {
   max-width: 140px;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.15));
+  transition: filter 0.2s ease;
 }
 
 .sidebar-brand-subtitle {
@@ -1887,7 +1888,7 @@ html, body, #root, * {
 }
 
 [data-theme='light'] .sidebar-brand-logo-img {
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.08));
+  filter: brightness(0);
 }
 
 [data-theme='light'] .sidebar-mobile-close {
