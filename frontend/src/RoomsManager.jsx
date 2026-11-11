@@ -59,6 +59,9 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
   // Modais de Operação
   const [viewingCpuModal, setViewingCpuModal] = useState(null);
+  const [isEditingCpuCode, setIsEditingCpuCode] = useState(false);
+  const [cpuCodeInput, setCpuCodeInput] = useState('');
+  const [cpuCodeError, setCpuCodeError] = useState('');
   const [swapModalData, setSwapModalData] = useState(null);
   const [pertenceModalData, setPertenceModalData] = useState(null);
   const [replaceModalData, setReplaceModalData] = useState(null);
@@ -673,6 +676,75 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
     );
   };
 
+  const handleCloseViewingCpuModal = () => {
+    setViewingCpuModal(null);
+    setIsEditingCpuCode(false);
+    setCpuCodeInput('');
+    setCpuCodeError('');
+  };
+
+  // Alterar Código de uma CPU diretamente no Modal de Detalhes
+  const handleSaveCpuCode = () => {
+    if (!viewingCpuModal?.cpu) return;
+    const cleanCode = cpuCodeInput.trim();
+    if (!cleanCode) {
+      setCpuCodeError('O código da CPU não pode ser vazio.');
+      return;
+    }
+
+    const currentCpuId = viewingCpuModal.cpu.id;
+    const currentCode = viewingCpuModal.cpu.code || '';
+
+    // Se o código não foi modificado
+    if (cleanCode === currentCode) {
+      setIsEditingCpuCode(false);
+      setCpuCodeError('');
+      return;
+    }
+
+    // Verificar se já existe outra CPU com este mesmo código
+    const isDuplicate = cpus.some(
+      c => String(c.id) !== String(currentCpuId) &&
+           c.code &&
+           c.code.trim().toLowerCase() === cleanCode.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setCpuCodeError('Já existe outra CPU cadastrada com este código.');
+      return;
+    }
+
+    const targetCpu = cpus.find(c => String(c.id) === String(currentCpuId));
+    const locationDesc = targetCpu?.location || `${viewingCpuModal.roomName} - ${viewingCpuModal.paNumber}`;
+
+    const updatedCpus = cpus.map(c => 
+      String(c.id) === String(currentCpuId) ? { ...c, code: cleanCode } : c
+    );
+
+    const historyEntry = {
+      id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
+      date: new Date().toISOString(),
+      cpuCode: cleanCode,
+      from: locationDesc,
+      to: locationDesc,
+      action: 'Alteração de Código',
+      details: `Código da CPU alterado de [${currentCode}] para [${cleanCode}]`
+    };
+
+    const newHistory = [historyEntry, ...history];
+    setCpus(updatedCpus);
+    setHistory(newHistory);
+    updateData({ cpus: updatedCpus, history: newHistory });
+
+    setViewingCpuModal(prev => prev && String(prev.cpu?.id) === String(currentCpuId)
+      ? { ...prev, cpu: { ...prev.cpu, code: cleanCode } }
+      : null
+    );
+
+    setIsEditingCpuCode(false);
+    setCpuCodeError('');
+  };
+
   return (
     <div className="rooms-manager flex flex-col gap-4">
       {/* Top Header com Tabs das Salas */}
@@ -915,6 +987,9 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
                     onDrop={(e) => handleDrop(e, i, false)}
                     onClick={() => {
                       if (cpuInfo) {
+                        setIsEditingCpuCode(false);
+                        setCpuCodeInput(cpuInfo.code || '');
+                        setCpuCodeError('');
                         setViewingCpuModal({ cpu: cpuInfo, paNumber: globalPaNumber, roomName: selectedRoom.name });
                       }
                     }}
@@ -1042,6 +1117,9 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
                         onDrop={(e) => handleDrop(e, i, true)}
                         onClick={() => {
                           if (cpuInfo) {
+                            setIsEditingCpuCode(false);
+                            setCpuCodeInput(cpuInfo.code || '');
+                            setCpuCodeError('');
                             setViewingCpuModal({ cpu: cpuInfo, paNumber: `SUP ${String(supNumber).padStart(2, '0')}`, roomName: selectedRoom.name });
                           }
                         }}
@@ -1249,26 +1327,117 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
         </div>
       )}
 
-      {/* 4. Modal de Detalhes da CPU com Edição Rápida de Pertence */}
+      {/* 4. Modal de Detalhes da CPU com Edição Rápida de Código e Pertence */}
       {viewingCpuModal && (
-        <div className="modal-overlay" onClick={() => setViewingCpuModal(null)}>
+        <div className="modal-overlay" onClick={handleCloseViewingCpuModal}>
           <div className="modal-content-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="flex justify-between items-center mb-4">
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-color)' }}>Detalhes do Equipamento</h3>
               <button 
-                onClick={() => setViewingCpuModal(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem' }}
+                type="button"
+                onClick={handleCloseViewingCpuModal}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+                aria-label="Fechar modal"
               >
                 ✕
               </button>
             </div>
 
             <div className="flex flex-col gap-3 mb-6">
-              <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <span className="text-muted text-sm" style={{ display: 'block', marginBottom: '2px' }}>Código da CPU</span>
-                <strong style={{ fontSize: '1.15rem', fontFamily: 'var(--font-mono)', color: 'var(--text-color)' }}>
-                  {viewingCpuModal.cpu.code}
-                </strong>
+              <div style={{ padding: '14px', background: 'var(--input-bg)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-muted text-sm" style={{ fontWeight: 600 }}>Código da CPU</span>
+                  {!isEditingCpuCode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingCpuCode(true);
+                        setCpuCodeInput(viewingCpuModal.cpu.code || '');
+                        setCpuCodeError('');
+                      }}
+                      className="btn-sm btn-secondary"
+                      style={{ 
+                        padding: '3px 9px', 
+                        fontSize: '0.75rem', 
+                        gap: '5px', 
+                        height: 'auto', 
+                        display: 'inline-flex', 
+                        alignItems: 'center',
+                        borderRadius: '6px'
+                      }}
+                      title="Editar código da CPU"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      </svg>
+                      Editar
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingCpuCode ? (
+                  <strong style={{ fontSize: '1.15rem', fontFamily: 'var(--font-mono)', color: 'var(--text-color)', display: 'block', wordBreak: 'break-all' }}>
+                    {viewingCpuModal.cpu.code}
+                  </strong>
+                ) : (
+                  <div className="flex flex-col gap-2 mt-2">
+                    <input
+                      type="text"
+                      className="premium-input"
+                      value={cpuCodeInput}
+                      onChange={(e) => {
+                        setCpuCodeInput(e.target.value);
+                        if (cpuCodeError) setCpuCodeError('');
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveCpuCode();
+                        } else if (e.key === 'Escape') {
+                          setIsEditingCpuCode(false);
+                          setCpuCodeError('');
+                        }
+                      }}
+                      autoFocus
+                      placeholder="Ex: NT-2607-15-2198"
+                      style={{ 
+                        fontFamily: 'var(--font-mono)', 
+                        fontSize: '0.95rem', 
+                        fontWeight: 700,
+                        padding: '8px 12px', 
+                        width: '100%',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    {cpuCodeError && (
+                      <span style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 600 }}>
+                        {cpuCodeError}
+                      </span>
+                    )}
+                    <div className="flex gap-2 justify-end mt-1">
+                      <button
+                        type="button"
+                        className="btn-sm btn-secondary"
+                        onClick={() => {
+                          setIsEditingCpuCode(false);
+                          setCpuCodeError('');
+                        }}
+                        style={{ padding: '5px 12px', fontSize: '0.8rem', borderRadius: '6px' }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-sm primary"
+                        onClick={handleSaveCpuCode}
+                        style={{ padding: '5px 14px', fontSize: '0.8rem', borderRadius: '6px' }}
+                      >
+                        Salvar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ padding: '14px', background: 'var(--input-bg)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
@@ -1313,7 +1482,7 @@ export default function RoomsManager({ cpus, setCpus, rooms, setRooms, history, 
 
             <button 
               className="btn-secondary" 
-              onClick={() => setViewingCpuModal(null)}
+              onClick={handleCloseViewingCpuModal}
               style={{ width: '100%', justifyContent: 'center' }}
             >
               Fechar Detalhes
