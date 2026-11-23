@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { sanitizeInput } from './api';
 import { exportToExcel } from './utils/excelExporter';
 import './CpuInventory.css';
@@ -11,6 +11,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
 
   // Estados dos Filtros e Busca
   const [searchCode, setSearchCode] = useState('');
+  const [filterLocation, setFilterLocation] = useState('todas');
   const [filterAcquisition, setFilterAcquisition] = useState('todas');
   const [filterAuditen, setFilterAuditen] = useState('todos');
 
@@ -26,6 +27,45 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
   };
   const acqOptions = getAcqOptions();
 
+  // Lista dinâmica de salas e locais conhecidos
+  const roomOptions = useMemo(() => {
+    const set = new Set();
+    if (rooms && Array.isArray(rooms)) {
+      rooms.forEach(r => { if (r.name && r.name.trim()) set.add(r.name.trim()); });
+    }
+    (cpus || []).forEach(c => {
+      if (c.location && c.location.toLowerCase() !== 'estoque') {
+        const parts = c.location.split(' - ');
+        if (parts.length > 0 && parts[0].trim()) {
+          set.add(parts[0].trim());
+        }
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [rooms, cpus]);
+
+  // Contadores dinâmicos de localização
+  const locationStats = useMemo(() => {
+    let estoque = 0;
+    let emOperacao = 0;
+    const roomCounts = {};
+
+    (cpus || []).forEach(c => {
+      const loc = (c.location || '').toLowerCase().trim();
+      const isEstoque = !loc || loc === 'estoque' || loc === 'no estoque';
+      if (isEstoque) {
+        estoque++;
+      } else {
+        emOperacao++;
+        const matchedRoom = (rooms || []).find(r => loc.includes((r.name || '').toLowerCase()));
+        const rName = matchedRoom ? matchedRoom.name : (c.location.split(' - ')[0] || 'Outras');
+        roomCounts[rName] = (roomCounts[rName] || 0) + 1;
+      }
+    });
+
+    return { estoque, emOperacao, roomCounts };
+  }, [cpus, rooms]);
+
   // Estados de Edição
   const [editingCpu, setEditingCpu] = useState(null);
   const [editCode, setEditCode] = useState('');
@@ -34,18 +74,33 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
 
   // Lógica de Filtragem Inteligente
   const filteredCpus = (cpus || []).filter(cpu => {
-    // 1. Filtro por Aquisição (TIM, Affix, Estoque, etc)
+    const locLower = (cpu.location || '').toLowerCase().trim();
+    const isEstoque = !locLower || locLower === 'estoque' || locLower === 'no estoque';
+
+    // 1. Filtro por Localização (Estoque, Em Operação ou Sala Específica)
+    if (filterLocation !== 'todas') {
+      if (filterLocation === 'estoque') {
+        if (!isEstoque) return false;
+      } else if (filterLocation === 'em_operacao') {
+        if (isEstoque) return false;
+      } else if (filterLocation.startsWith('sala:')) {
+        const targetRoom = filterLocation.replace('sala:', '').toLowerCase();
+        if (isEstoque || !locLower.includes(targetRoom)) return false;
+      }
+    }
+
+    // 2. Filtro por Aquisição (TIM, Affix, Estoque, etc)
     if (filterAcquisition !== 'todas') {
       if ((cpu.acquisition || '').toLowerCase() !== filterAcquisition.toLowerCase()) {
         return false;
       }
     }
 
-    // 2. Filtro por Licença Auditen
+    // 3. Filtro por Licença Auditen
     if (filterAuditen === 'sim' && !cpu.isAuditen) return false;
     if (filterAuditen === 'nao' && cpu.isAuditen) return false;
 
-    // 3. Pesquisa por Código da CPU (Suporta buscar por 'cpu sem código' / 'sem identificação')
+    // 4. Pesquisa por Código ou Localização (ex: "46361", "PA 27", "SUP 01", "sem identificação")
     if (searchCode.trim()) {
       const query = searchCode.trim().toLowerCase();
       const codeLower = (cpu.code || '').toLowerCase();
@@ -54,7 +109,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
       if (query.includes('sem c') || query.includes('sem cod') || query.includes('sem id') || query.includes('sem ident')) {
         if (!isUnnamedCpu) return false;
       } else {
-        if (!codeLower.includes(query)) return false;
+        if (!codeLower.includes(query) && !locLower.includes(query)) return false;
       }
     }
 
@@ -186,25 +241,68 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
       </div>
 
       {/* Card de Filtros e Busca Inteligente */}
-      <div className="card filter-cpu-card flex flex-col gap-4">
-        <h3 style={{fontSize: '1.1rem'}}>Filtros e Pesquisa de CPUs</h3>
-        <div className="flex gap-4 items-center flex-wrap">
-          {/* Busca por Código */}
+      <div className="card filter-cpu-card flex flex-col gap-3">
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700, color: 'var(--text-color)' }}>
+            Filtros e Pesquisa de CPUs
+          </h3>
+          {(searchCode || filterLocation !== 'todas' || filterAcquisition !== 'todas' || filterAuditen !== 'todos') && (
+            <button 
+              type="button" 
+              onClick={() => {
+                setSearchCode('');
+                setFilterLocation('todas');
+                setFilterAcquisition('todas');
+                setFilterAuditen('todos');
+              }}
+              className="btn-sm btn-secondary"
+              style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '6px' }}
+              title="Restaurar todos os filtros"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-3 items-center flex-wrap">
+          {/* Busca por Código ou Localização */}
           <input 
             type="text" 
-            placeholder="Pesquisar por código (ex: 46361 ou 'sem identificação')" 
+            placeholder="Pesquisar por código ou local (ex: 46361, PA 27...)" 
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
             className="premium-input"
-            style={{flex: 2, minWidth: '220px'}}
+            style={{ flex: '1.4 1 210px', minWidth: '200px' }}
           />
+
+          {/* Filtro por Localização */}
+          <select 
+            value={filterLocation} 
+            onChange={(e) => setFilterLocation(e.target.value)} 
+            className="premium-input" 
+            style={{ flex: '1 1 180px', minWidth: '170px' }}
+            title="Filtrar por onde a CPU está localizada"
+          >
+            <option value="todas">Todas as Localizações ({cpus.length})</option>
+            <option value="estoque">Apenas no Estoque ({locationStats.estoque})</option>
+            <option value="em_operacao">Em Operação / Salas ({locationStats.emOperacao})</option>
+            {roomOptions.length > 0 && (
+              <optgroup label="Salas Específicas">
+                {roomOptions.map(rName => (
+                  <option key={rName} value={`sala:${rName}`}>
+                    Sala {rName} ({locationStats.roomCounts[rName] || 0})
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
 
           {/* Filtro por Aquisição */}
           <select 
             value={filterAcquisition} 
             onChange={(e) => setFilterAcquisition(e.target.value)} 
             className="premium-input" 
-            style={{flex: 1, minWidth: '160px'}}
+            style={{ flex: '1 1 150px', minWidth: '140px' }}
           >
             <option value="todas">Todas as Aquisições</option>
             {acqOptions.map(opt => (
@@ -217,7 +315,7 @@ export default function CpuInventory({ cpus, setCpus, updateData, rooms }) {
             value={filterAuditen} 
             onChange={(e) => setFilterAuditen(e.target.value)} 
             className="premium-input" 
-            style={{flex: 1, minWidth: '180px'}}
+            style={{ flex: '1 1 160px', minWidth: '150px' }}
           >
             <option value="todos">Todos (Auditen e Não Auditen)</option>
             <option value="sim">Apenas Auditen</option>
