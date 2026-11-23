@@ -1336,7 +1336,7 @@ function App() {
           )}
 
           {activeTab === 'history' && (
-            <History history={history} setHistory={setHistory} updateData={updateData} />
+            <History history={history} setHistory={setHistory} updateData={updateData} rooms={rooms} />
           )}
 
           {activeTab === 'headsets' && (

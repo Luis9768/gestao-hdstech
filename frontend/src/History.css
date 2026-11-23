@@ -2,11 +2,19 @@
   width: 100%;
 }
 
+.history-filters-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.history-filter-controls {
+  width: 100%;
+}
+
 .history-table {
   border-collapse: collapse;
   text-align: left;
   width: 100%;
-  min-width: 500px;
+  min-width: 600px;
 }
 
 .history-table th {
@@ -21,6 +29,7 @@
   padding: 12px;
   border-bottom: 1px solid var(--border-color);
   font-size: 0.85rem;
+  vertical-align: middle;
 }
 
 .history-table tr:last-child td {
@@ -34,6 +43,61 @@
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 0.8rem;
+  display: inline-block;
+  font-family: var(--font-mono);
+}
+
+/* Badges de Ação / Evento */
+.history-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+}
+
+.history-action-badge.action-move {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.history-action-badge.action-swap {
+  background: rgba(139, 92, 246, 0.1);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.history-action-badge.action-edit-code {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.history-action-badge.action-edit-acq {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.history-action-badge.action-stock {
+  background: rgba(113, 113, 122, 0.12);
+  color: #a1a1aa;
+  border: 1px solid rgba(113, 113, 122, 0.25);
+}
+
+.history-details-text {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.35;
+  max-width: 320px;
 }
 
 @media (max-width: 768px) {
@@ -52,6 +116,18 @@
     flex: 1 1 auto;
     text-align: center;
   }
+
+  .history-filter-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+
+  .history-filter-controls input,
+  .history-filter-controls select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 
 /* Light Theme Overrides for History */
@@ -66,5 +142,35 @@
 
 [data-theme='light'] .history-table tr:hover td {
   background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='light'] .history-action-badge.action-move {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+[data-theme='light'] .history-action-badge.action-swap {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border-color: #ddd6fe;
+}
+
+[data-theme='light'] .history-action-badge.action-edit-code {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+[data-theme='light'] .history-action-badge.action-edit-acq {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+[data-theme='light'] .history-action-badge.action-stock {
+  background: #f4f4f5;
+  color: #52525b;
+  border-color: #e4e4e7;
 }
 
